@@ -55,11 +55,11 @@ export const channels: Channel[] = [
 ];
 
 export const channelLabels: Record<Channel, string> = {
-  audit: "Audit & CRO",
-  seo: "SEO / technical",
-  funnel: "Funnel / payment (static)",
-  email: "Email",
-  deliverability: "Email deliverability (DNS)",
-  social: "Social",
-  browser: "Synthetic browser check",
+  audit: "Comms Clarity",
+  seo: "Buyer Discoverability",
+  funnel: "Conversion Path",
+  email: "Email Touchpoints",
+  deliverability: "Comms Surface Security",
+  social: "Social Presence",
+  browser: "Synthetic Comms Check",
 };

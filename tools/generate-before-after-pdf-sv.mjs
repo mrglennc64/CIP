@@ -506,15 +506,15 @@ const Footer = () =>
   h(
     Text,
     { style: styles.footer },
-    "Web Assessment Agency · webassessment.agency · Genererad av Pam — Före/Efter-rapport"
+    "Communications Intelligence Platform · cip.usesmpt.com · Genererad av Pam — Före/Efter-rapport"
   );
 
 const Doc = () =>
   h(
     Document,
     {
-      title: "Före/Efter-rapport — Vecka 20",
-      author: "Web Assessment Agency",
+      title: "Kommunikationsintelligens — Före/Efter, Vecka 20",
+      author: "Communications Intelligence Platform",
       subject: "Exempel Före/Efter-rapport",
     },
     h(

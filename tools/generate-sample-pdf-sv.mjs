@@ -480,15 +480,15 @@ const Footer = () =>
   h(
     Text,
     { style: styles.footer },
-    "Web Assessment Agency · webassessment.agency · Genererad av Pam — veckorapport"
+    "Communications Intelligence Platform · cip.usesmpt.com · Genererad av Pam — veckorapport"
   );
 
 const Doc = () =>
   h(
     Document,
     {
-      title: "Veckorapport — Vecka 20",
-      author: "Web Assessment Agency",
+      title: "Kommunikationsintelligens — Veckorapport, Vecka 20",
+      author: "Communications Intelligence Platform",
       subject: "Exempel veckorapport",
     },
     h(

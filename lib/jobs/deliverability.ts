@@ -1,6 +1,50 @@
 import { promises as dns } from "node:dns";
+import * as tls from "node:tls";
 import type { Finding, JobResult } from "./types";
 import { scoreFromFindings } from "./audit";
+
+const TLS_TIMEOUT_MS = 3500;
+const COMMS_SUBDOMAINS = ["www", "support", "status", "docs", "help", "app", "api"];
+
+type TlsCheck = {
+  host: string;
+  ok: boolean;
+  issuer?: string;
+  daysToExpiry?: number;
+  error?: string;
+};
+
+async function checkTls(host: string): Promise<TlsCheck> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (r: TlsCheck) => {
+      if (settled) return;
+      settled = true;
+      try { socket.destroy(); } catch {}
+      resolve(r);
+    };
+    const timer = setTimeout(() => finish({ host, ok: false, error: "timeout" }), TLS_TIMEOUT_MS);
+    const socket = tls.connect(
+      { host, port: 443, servername: host, rejectUnauthorized: false, ALPNProtocols: ["http/1.1"] },
+      () => {
+        clearTimeout(timer);
+        const cert = socket.getPeerCertificate(false);
+        if (!cert || !cert.valid_to) {
+          finish({ host, ok: false, error: "no certificate" });
+          return;
+        }
+        const expiry = new Date(cert.valid_to);
+        const days = Math.round((expiry.getTime() - Date.now()) / 86400000);
+        const issuer = cert.issuer?.O || cert.issuer?.CN || "unknown";
+        finish({ host, ok: socket.authorized, issuer, daysToExpiry: days, error: socket.authorized ? undefined : socket.authorizationError?.toString() });
+      },
+    );
+    socket.once("error", (err) => {
+      clearTimeout(timer);
+      finish({ host, ok: false, error: err.message });
+    });
+  });
+}
 
 // DNS-only sender-posture checks. No mailbox access, no SMTP credentials.
 // Catches the common deliverability problems that get a site's transactional
@@ -278,6 +322,54 @@ export async function runDeliverability(rawUrl: string): Promise<JobResult> {
           "Most receivers reject or heavily penalize mail from IPs without matching reverse DNS. If this IP is your sending server, add a PTR record at the hosting provider.",
       });
     }
+  }
+
+  // ---------- TLS on comms surfaces ----------
+  // Probe apex + common comms subdomains in parallel. Any host that doesn't
+  // resolve or refuses connection is skipped silently (no finding). Hosts
+  // that do answer are scored on cert validity + days to expiry.
+  const tlsHosts = [domain, ...COMMS_SUBDOMAINS.map((s) => `${s}.${domain}`)];
+  const tlsResults = await Promise.all(tlsHosts.map(checkTls));
+  const tlsReachable = tlsResults.filter((r) => r.daysToExpiry !== undefined);
+  const tlsExpiringSoon: string[] = [];
+  const tlsInvalid: TlsCheck[] = [];
+
+  for (const r of tlsReachable) {
+    if (!r.ok) {
+      tlsInvalid.push(r);
+    } else if (r.daysToExpiry !== undefined && r.daysToExpiry < 30) {
+      tlsExpiringSoon.push(`${r.host} (${r.daysToExpiry}d)`);
+    }
+  }
+
+  if (tlsReachable.length === 0) {
+    findings.push({
+      severity: "warn",
+      label: "No comms surface responded to TLS on port 443",
+      detail: `Probed: ${tlsHosts.join(", ")}. None answered. Either the domain has no web-facing comms surfaces, or all are gated behind non-standard ports.`,
+    });
+  } else {
+    findings.push({
+      severity: "ok",
+      label: `TLS reachable on ${tlsReachable.length} comms surface${tlsReachable.length === 1 ? "" : "s"}`,
+      detail: tlsReachable.map((r) => `${r.host} (${r.daysToExpiry}d, ${r.issuer})`).join("; "),
+    });
+  }
+
+  for (const r of tlsInvalid) {
+    findings.push({
+      severity: "issue",
+      label: `TLS certificate invalid on ${r.host}`,
+      detail: r.error ?? "Certificate did not validate. Browsers will show a warning before users reach this comms surface.",
+    });
+  }
+
+  if (tlsExpiringSoon.length > 0) {
+    findings.push({
+      severity: "warn",
+      label: `TLS cert expiring within 30 days: ${tlsExpiringSoon.join(", ")}`,
+      detail: "Renew before expiry to avoid browser blocks.",
+    });
   }
 
   // Deterministic "fix-it" DNS records. Built from what's missing or weak;
