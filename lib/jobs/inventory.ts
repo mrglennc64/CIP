@@ -1,14 +1,28 @@
+import { promises as dns } from "node:dns";
 import type { Finding, JobResult } from "./types";
 
-// Public comms-surface inventory via Certificate Transparency logs.
-// Source: https://crt.sh — public CT log mirror. No active scanning of the
-// target, no port probing, no credential hunting. CT logs are a public record
-// of every TLS cert ever issued for a domain; we read that record and report
-// what subdomains the brand has exposed publicly.
+// Public comms-surface inventory.
+// Primary source: https://crt.sh — public CT log mirror.
+// Fallback source: DNS A/AAAA resolution on a static list of common comms
+// subdomains, used only when crt.sh times out or errors (it's flaky for
+// large domains). No active scanning, no port probing, no credential hunting
+// in either path. Only DNS reads + HEAD on /.
 
-const CRTSH_TIMEOUT_MS = 30_000;
+const CRTSH_TIMEOUT_MS = 25_000;
 const HEAD_TIMEOUT_MS = 4_000;
+const DNS_TIMEOUT_MS = 2_500;
 const MAX_PROBE = 25;
+
+// Common comms subdomains used by SaaS and enterprise brands. Used only as
+// fallback when CT-log discovery fails. Kept tight (~25) to keep total scan
+// time bounded.
+const DNS_FALLBACK_SUBDOMAINS = [
+  "www", "app", "api", "docs", "developer", "developers",
+  "support", "help", "status", "blog", "kb", "press",
+  "careers", "partners", "sales", "login", "sso", "auth",
+  "accounts", "billing", "dashboard", "portal", "console",
+  "store", "community",
+];
 
 type CrtshEntry = {
   common_name?: string;
@@ -65,6 +79,21 @@ async function fetchCrtsh(domain: string): Promise<CrtshOutcome> {
   }
 }
 
+async function dnsResolves(host: string): Promise<boolean> {
+  // Use dns.lookup (OS getaddrinfo) rather than dns.resolve4 (c-ares). The
+  // OS resolver is more reliable across Windows/macOS/Linux configurations
+  // where Node's c-ares can stall on missing nameserver hints.
+  const timeoutP = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), DNS_TIMEOUT_MS));
+  const lookupP = dns.lookup(host).then(() => true).catch(() => false);
+  return Promise.race([lookupP, timeoutP]);
+}
+
+async function fallbackDnsDiscovery(domain: string): Promise<string[]> {
+  const candidates = DNS_FALLBACK_SUBDOMAINS.map((s) => `${s}.${domain}`);
+  const checks = await Promise.all(candidates.map(async (h) => ({ host: h, ok: await dnsResolves(h) })));
+  return checks.filter((c) => c.ok).map((c) => c.host).sort();
+}
+
 async function probeHead(host: string): Promise<{ host: string; status: number | null }> {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), HEAD_TIMEOUT_MS);
@@ -100,8 +129,20 @@ export async function runInventory(rawUrl: string): Promise<JobResult> {
   // transient 502/503/429s and timeouts on first-cold queries.
   let outcome = await fetchCrtsh(domain);
   if (outcome.kind !== "ok") {
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, 2000));
     outcome = await fetchCrtsh(domain);
+  }
+
+  // Final fallback: if CT-log discovery still failed, probe a static list of
+  // common comms subdomains via DNS. Less complete than CT logs (won't catch
+  // brand-specific subdomains) but always produces real data.
+  let source: "ct-logs" | "dns-fallback" = "ct-logs";
+  if (outcome.kind !== "ok") {
+    const fallback = await fallbackDnsDiscovery(domain);
+    if (fallback.length > 0) {
+      outcome = { kind: "ok", subdomains: fallback };
+      source = "dns-fallback";
+    }
   }
   const findings: Finding[] = [];
 
@@ -141,7 +182,9 @@ export async function runInventory(rawUrl: string): Promise<JobResult> {
   findings.push({
     severity: "ok",
     label: `${subdomains.length} unique public comms surface${subdomains.length === 1 ? "" : "s"} discovered`,
-    detail: `Source: Certificate Transparency logs (crt.sh). Apex excluded; wildcards excluded.`,
+    detail: source === "ct-logs"
+      ? `Source: Certificate Transparency logs (crt.sh). Apex excluded; wildcards excluded.`
+      : `Source: DNS fallback (CT-log query unavailable). Probed ${DNS_FALLBACK_SUBDOMAINS.length} common comms subdomains; reported only those that resolved.`,
   });
 
   // Probe up to MAX_PROBE for live/dead status. CT logs include retired
