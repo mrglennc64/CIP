@@ -1,0 +1,34 @@
+{
+  "name": "cip",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "generate:pdf": "node tools/generate-sample-pdf.mjs",
+    "generate:pdf:sv": "node tools/generate-sample-pdf-sv.mjs",
+    "generate:pdf:ba": "node tools/generate-before-after-pdf.mjs",
+    "generate:pdf:ba-sv": "node tools/generate-before-after-pdf-sv.mjs"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "next": "16.2.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "swr": "^2.4.1"
+  },
+  "devDependencies": {
+    "@react-pdf/renderer": "^4.5.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "puppeteer": "^25.0.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

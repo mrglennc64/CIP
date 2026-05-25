@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Web Assessment Agency design tokens.
+   Scandinavian minimal: cool blue primary, neutral surface,
+   structured spacing, soft borders. Mirrors war/webflow-template.txt. */
+:root {
+  --wa-bg: #f7f9fb;
+  --wa-surface: #ffffff;
+  --wa-border: #e5e7eb;
+
+  --wa-primary: #1f6feb;
+  --wa-primary-dark: #1a5fcc;
+  --wa-primary-soft: #e3edff;
+
+  --wa-text: #111827;
+  --wa-text-muted: #6b7280;
+
+  --wa-accent: #10b981;
+  --wa-danger: #ef4444;
+}
+
+@theme inline {
+  --color-bg: var(--wa-bg);
+  --color-surface: var(--wa-surface);
+  --color-border: var(--wa-border);
+  --color-text: var(--wa-text);
+  --color-text-muted: var(--wa-text-muted);
+
+  --color-wa-primary: var(--wa-primary);
+  --color-wa-primary-dark: var(--wa-primary-dark);
+  --color-wa-primary-soft: var(--wa-primary-soft);
+  --color-wa-accent: var(--wa-accent);
+  --color-wa-danger: var(--wa-danger);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  background: var(--wa-bg);
+  color: var(--wa-text);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
