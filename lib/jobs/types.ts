@@ -67,5 +67,5 @@ export const channelLabels: Record<Channel, string> = {
   social: "Social Presence",
   browser: "Synthetic Comms Check",
   inventory: "Comms Surfaces Inventory",
-  ivr: "IVR Audit (sample)",
+  ivr: "IVR Audit (Sample Data — production version scans your prospect's actual IVR)",
 };

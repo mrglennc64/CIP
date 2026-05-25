@@ -6,7 +6,7 @@ import type { Finding, JobResult } from "./types";
 // of every TLS cert ever issued for a domain; we read that record and report
 // what subdomains the brand has exposed publicly.
 
-const CRTSH_TIMEOUT_MS = 12_000;
+const CRTSH_TIMEOUT_MS = 30_000;
 const HEAD_TIMEOUT_MS = 4_000;
 const MAX_PROBE = 25;
 
@@ -29,7 +29,12 @@ function categorize(host: string): SurfaceCategory {
   return "other";
 }
 
-async function fetchCrtsh(domain: string): Promise<string[]> {
+type CrtshOutcome =
+  | { kind: "ok"; subdomains: string[] }
+  | { kind: "timeout" }
+  | { kind: "error"; status?: number; message?: string };
+
+async function fetchCrtsh(domain: string): Promise<CrtshOutcome> {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), CRTSH_TIMEOUT_MS);
   try {
@@ -37,7 +42,7 @@ async function fetchCrtsh(domain: string): Promise<string[]> {
       signal: ac.signal,
       headers: { "User-Agent": "cip-comms-inventory" },
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { kind: "error", status: res.status };
     const json = (await res.json()) as CrtshEntry[];
     const set = new Set<string>();
     for (const row of json) {
@@ -51,9 +56,10 @@ async function fetchCrtsh(domain: string): Promise<string[]> {
         set.add(n);
       }
     }
-    return [...set].sort();
-  } catch {
-    return [];
+    return { kind: "ok", subdomains: [...set].sort() };
+  } catch (e) {
+    if ((e as { name?: string } | null)?.name === "AbortError") return { kind: "timeout" };
+    return { kind: "error", message: e instanceof Error ? e.message : String(e) };
   } finally {
     clearTimeout(timer);
   }
@@ -90,9 +96,34 @@ export async function runInventory(rawUrl: string): Promise<JobResult> {
     };
   }
 
-  const subdomains = await fetchCrtsh(domain);
+  // crt.sh is flaky under load. One retry after a brief pause clears most
+  // transient 502/503/429s and timeouts on first-cold queries.
+  let outcome = await fetchCrtsh(domain);
+  if (outcome.kind !== "ok") {
+    await new Promise((r) => setTimeout(r, 3000));
+    outcome = await fetchCrtsh(domain);
+  }
   const findings: Finding[] = [];
 
+  if (outcome.kind === "timeout") {
+    findings.push({
+      severity: "warn",
+      label: "Certificate Transparency lookup timed out",
+      detail: `crt.sh did not respond within ${CRTSH_TIMEOUT_MS / 1000}s for ${domain}. Large domains have thousands of cert entries; the CT mirror sometimes throttles. Re-running the scan typically succeeds.`,
+    });
+    return { score: 60, summary: `CT-log inventory timed out for ${domain}.`, findings, details: { domain, error: "timeout" } };
+  }
+
+  if (outcome.kind === "error") {
+    findings.push({
+      severity: "warn",
+      label: `CT-log query returned ${outcome.status ?? "error"}`,
+      detail: outcome.message ?? "crt.sh upstream issue. Re-run later.",
+    });
+    return { score: 60, summary: `CT-log query failed for ${domain}.`, findings, details: { domain, error: outcome } };
+  }
+
+  const subdomains = outcome.subdomains;
   if (subdomains.length === 0) {
     findings.push({
       severity: "warn",

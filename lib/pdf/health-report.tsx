@@ -34,7 +34,7 @@ const channelLabels: Record<Channel, string> = {
   social: "Social Presence",
   browser: "Synthetic Comms Check",
   inventory: "Comms Surfaces Inventory",
-  ivr: "IVR Audit (sample)",
+  ivr: "IVR Audit (Sample Data — production version scans your prospect's actual IVR)",
 };
 
 // ── Tokens ──────────────────────────────────────────────────────────────
@@ -905,12 +905,28 @@ function ChannelKpis({ run }: { run: Run }) {
   );
 }
 
+// Map severity -> CX Impact + Fix Priority (derived view, no scanner changes)
+function tagsForSeverity(sev: Finding["severity"]): { impact: string; priority: string; impactColor: string; priorityColor: string } | null {
+  if (sev === "issue") return { impact: "HIGH IMPACT", priority: "P1 · FIX 48H", impactColor: C.danger, priorityColor: C.danger };
+  if (sev === "warn") return { impact: "MED IMPACT", priority: "P2 · FIX 7D", impactColor: C.warn, priorityColor: C.warn };
+  return null;
+}
+
 function FindingBullet({ line }: { line: CarinaLine }) {
   const d = findingDot(line.severity);
+  const tags = tagsForSeverity(line.severity);
   return (
     <View style={styles.findingRow}>
       <Text style={[styles.findingDot, { color: d.color }] as never}>●</Text>
-      <Text style={styles.findingText}>{line.text}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.findingText}>{line.text}</Text>
+        {tags && (
+          <View style={{ flexDirection: "row", marginTop: 2 }}>
+            <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", color: tags.impactColor, marginRight: 8, letterSpacing: 0.6 }}>{tags.impact}</Text>
+            <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", color: tags.priorityColor, letterSpacing: 0.6 }}>{tags.priority}</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -1122,6 +1138,106 @@ function Footer() {
   );
 }
 
+// ── Risk Summary ─────────────────────────────────────────────────────────
+function RiskSummary({ run }: { run: Run }) {
+  const all = channels.flatMap((ch) => run.jobs[ch].result?.findings ?? []);
+  const critical = all.filter((f) => f.severity === "issue").length;
+  const medium = all.filter((f) => f.severity === "warn").length;
+  const low = all.filter((f) => f.severity === "ok").length;
+
+  return (
+    <View>
+      <Text style={styles.sectionHead}>Risk Summary</Text>
+      <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+        <View style={[styles.kpi, { borderColor: C.dangerBorder, backgroundColor: C.dangerSoft }] as never}>
+          <Text style={[styles.kpiLabel, { color: C.danger }] as never}>CRITICAL · P1</Text>
+          <Text style={[styles.kpiValue, { color: C.danger }] as never}>{critical}</Text>
+          <Text style={styles.kpiSub}>Fix within 48 hours</Text>
+        </View>
+        <View style={[styles.kpi, { borderColor: C.warnBorder, backgroundColor: C.warnSoft }] as never}>
+          <Text style={[styles.kpiLabel, { color: C.warn }] as never}>MEDIUM · P2</Text>
+          <Text style={[styles.kpiValue, { color: C.warn }] as never}>{medium}</Text>
+          <Text style={styles.kpiSub}>Fix within 7 days</Text>
+        </View>
+        <View style={[styles.kpi, { borderColor: C.okBorder, backgroundColor: C.okSoft }] as never}>
+          <Text style={[styles.kpiLabel, { color: C.ok }] as never}>LOW · P3</Text>
+          <Text style={[styles.kpiValue, { color: C.ok }] as never}>{low}</Text>
+          <Text style={styles.kpiSub}>Track</Text>
+        </View>
+      </View>
+      <Text style={styles.fieldLabel}>How to read this</Text>
+      <Text style={styles.fieldValue}>
+        Each finding in this report carries a CX Impact tag (High / Medium / Low)
+        and a Fix Priority (P1 / P2 / P3). Counts above aggregate every channel.
+        Critical findings should be remediated before the next quarterly comms
+        review; medium findings before the next planning cycle.
+      </Text>
+      <Text style={[styles.fieldLabel, { marginTop: 14 }] as never}>Before/After delta</Text>
+      <Text style={styles.fieldValue}>
+        First scan establishes the baseline. Score deltas and resolved-finding
+        counts appear here after the next scheduled re-scan.
+      </Text>
+    </View>
+  );
+}
+
+// ── Vonage / CCaaS Readiness ─────────────────────────────────────────────
+function readinessScore(run: Run, chs: Channel[]): number {
+  const scores = chs
+    .map((ch) => run.jobs[ch].result?.score)
+    .filter((s): s is number => typeof s === "number");
+  if (scores.length === 0) return 0;
+  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+}
+
+function readinessTier(score: number): { label: string; color: string } {
+  if (score >= 85) return { label: "READY", color: C.ok };
+  if (score >= 60) return { label: "GAPS", color: C.warn };
+  return { label: "AT RISK", color: C.danger };
+}
+
+function VonageReadiness({ run }: { run: Run }) {
+  const ccaas = readinessScore(run, ["ivr", "audit"]);
+  const ucaas = readinessScore(run, ["deliverability", "email"]);
+  const ai = readinessScore(run, ["browser", "social", "seo"]);
+  const compliance = readinessScore(run, ["deliverability", "ivr"]);
+
+  const items = [
+    { name: "CCaaS Readiness", score: ccaas, rationale: "Routing clarity (IVR audit) + landing-page clarity (Comms Clarity). Determines whether enterprise contact-center campaigns convert." },
+    { name: "UCaaS Readiness", score: ucaas, rationale: "Email touchpoints + sender posture (SPF/DKIM/DMARC). Determines whether unified-comms workflows reach inboxes." },
+    { name: "AI-Interaction Readiness", score: ai, rationale: "Discoverability + synthetic browser behavior + social presence. Determines whether AI agents can parse and represent the brand reliably." },
+    { name: "Enterprise Compliance Alignment", score: compliance, rationale: "TLS posture + GDPR/recording disclosures. Determines whether the surfaces survive procurement review." },
+  ];
+
+  return (
+    <View>
+      <Text style={styles.sectionHead}>CCaaS / UCaaS Readiness</Text>
+      <Text style={[styles.fieldValue, { marginBottom: 12 }] as never}>
+        Channel scores mapped to enterprise readiness pillars relevant to
+        contact-center, unified-communications, AI-interaction, and compliance
+        procurement reviews.
+      </Text>
+      {items.map((it) => {
+        const tier = readinessTier(it.score);
+        return (
+          <View key={it.name} style={[styles.channelBlock, { padding: 10 }] as never}>
+            <View style={[styles.channelHead, { marginBottom: 4 }] as never}>
+              <Text style={styles.channelTitle}>{it.name}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={[styles.channelScoreText, { marginRight: 8 }] as never}>{it.score}/100</Text>
+                <View style={[styles.statusPill, { borderColor: tier.color, backgroundColor: "#fff" }] as never}>
+                  <Text style={[styles.statusPillText, { color: tier.color }] as never}>{tier.label}</Text>
+                </View>
+              </View>
+            </View>
+            <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted }] as never}>{it.rationale}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 // ── Document ────────────────────────────────────────────────────────────
 function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
   const completed = channels
@@ -1148,13 +1264,23 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
         <OverallResult run={run} carina={carina} />
       </Page>
 
-      {/* PAGE 2 — Channel scores table */}
+      {/* PAGE 2 — Risk Summary (critical/medium/low + before/after note) */}
+      <Page size="A4" style={styles.page}>
+        <RiskSummary run={run} />
+      </Page>
+
+      {/* PAGE 3 — Vonage / CCaaS Readiness mapping */}
+      <Page size="A4" style={styles.page}>
+        <VonageReadiness run={run} />
+      </Page>
+
+      {/* PAGE 4 — Channel scores table */}
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel scores</Text>
         <ChannelKpis run={run} />
       </Page>
 
-      {/* PAGE 3+ — Channel findings */}
+      {/* PAGE 5+ — Channel findings */}
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel findings</Text>
         {channels.slice(0, 4).map((ch) => (
