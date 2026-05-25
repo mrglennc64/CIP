@@ -35,7 +35,9 @@ async function checkTls(host: string): Promise<TlsCheck> {
         }
         const expiry = new Date(cert.valid_to);
         const days = Math.round((expiry.getTime() - Date.now()) / 86400000);
-        const issuer = cert.issuer?.O || cert.issuer?.CN || "unknown";
+        const issuerO = cert.issuer?.O;
+        const issuerCN = cert.issuer?.CN;
+        const issuer = (Array.isArray(issuerO) ? issuerO[0] : issuerO) || (Array.isArray(issuerCN) ? issuerCN[0] : issuerCN) || "unknown";
         finish({ host, ok: socket.authorized, issuer, daysToExpiry: days, error: socket.authorized ? undefined : socket.authorizationError?.toString() });
       },
     );

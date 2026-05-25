@@ -33,6 +33,8 @@ const channelLabels: Record<Channel, string> = {
   deliverability: "Comms Surface Security",
   social: "Social Presence",
   browser: "Synthetic Comms Check",
+  inventory: "Comms Surfaces Inventory",
+  ivr: "IVR Audit (sample)",
 };
 
 // ── Tokens ──────────────────────────────────────────────────────────────
@@ -1155,14 +1157,14 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
       {/* PAGE 3+ — Channel findings */}
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel findings</Text>
-        {channels.slice(0, 3).map((ch) => (
+        {channels.slice(0, 4).map((ch) => (
           <ChannelSection key={ch} ch={ch} job={run.jobs[ch]} run={run} carina={carina} />
         ))}
       </Page>
 
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel findings (continued)</Text>
-        {channels.slice(3).map((ch) => (
+        {channels.slice(4).map((ch) => (
           <ChannelSection key={ch} ch={ch} job={run.jobs[ch]} run={run} carina={carina} />
         ))}
       </Page>

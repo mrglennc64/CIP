@@ -15,13 +15,15 @@ function statusForJob(job: Job): StatusKey {
 }
 
 const channelLabelsSv: Record<Channel, string> = {
-  audit: "Audit & CRO",
-  seo: "SEO / tekniskt",
-  funnel: "Funnel / betalning (statisk)",
-  email: "E-post",
-  deliverability: "E-postleverans (DNS)",
-  social: "Socialt",
-  browser: "Syntetisk webbläsarkontroll",
+  audit: "Kommunikationsklarhet",
+  seo: "Köparsökbarhet",
+  funnel: "Konverteringsväg",
+  email: "E-postkanaler",
+  deliverability: "Kommunikationssäkerhet",
+  social: "Sociala kanaler",
+  browser: "Syntetisk kommunikationskontroll",
+  inventory: "Kommunikationsyteinventering",
+  ivr: "IVR-revision (exempel)",
 };
 
 const LOCKED_CATEGORY_KEYS = [

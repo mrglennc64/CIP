@@ -5,7 +5,9 @@ export type Channel =
   | "email"
   | "deliverability"
   | "social"
-  | "browser";
+  | "browser"
+  | "inventory"
+  | "ivr";
 
 export type JobStatus = "pending" | "running" | "done" | "failed";
 
@@ -52,6 +54,8 @@ export const channels: Channel[] = [
   "deliverability",
   "social",
   "browser",
+  "inventory",
+  "ivr",
 ];
 
 export const channelLabels: Record<Channel, string> = {
@@ -62,4 +66,6 @@ export const channelLabels: Record<Channel, string> = {
   deliverability: "Comms Surface Security",
   social: "Social Presence",
   browser: "Synthetic Comms Check",
+  inventory: "Comms Surfaces Inventory",
+  ivr: "IVR Audit (sample)",
 };

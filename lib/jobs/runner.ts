@@ -7,6 +7,8 @@ import { runEmail } from "./email";
 import { runDeliverability } from "./deliverability";
 import { runSocial } from "./social";
 import { runBrowser } from "./browser";
+import { runInventory } from "./inventory";
+import { runIvr } from "./ivr";
 
 const handlers: Record<Channel, (url: string) => Promise<{
   score: number;
@@ -21,6 +23,8 @@ const handlers: Record<Channel, (url: string) => Promise<{
   deliverability: runDeliverability,
   social: runSocial,
   browser: runBrowser,
+  inventory: runInventory,
+  ivr: runIvr,
 };
 
 /**
