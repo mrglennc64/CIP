@@ -670,89 +670,102 @@ function findingDot(severity: "ok" | "warn" | "issue") {
   return { color: C.danger };
 }
 
+type TaggedAction = { action: string; severity: Finding["severity"] };
+
 // ── Required actions, derived per channel from finding labels ───────────
-function actionsForChannel(ch: Channel, findings: Finding[], run: Run): string[] {
-  const actions: string[] = [];
-  const has = (re: RegExp) => findings.some((f) => re.test(f.label));
+// Returns each action tagged with the severity of the finding that triggered it.
+// Cross-channel actions (e.g. funnel pulling from browser details) are tagged
+// "issue" because they only fire on hard breakages.
+function taggedActionsForChannel(ch: Channel, findings: Finding[], run: Run): TaggedAction[] {
+  const tagged: TaggedAction[] = [];
+  const find = (re: RegExp) => findings.find((f) => re.test(f.label));
+  const push = (re: RegExp, action: string) => {
+    const f = find(re);
+    if (f) tagged.push({ action, severity: f.severity });
+  };
 
   if (ch === "audit") {
-    if (has(/^Missing <title>$/)) actions.push("Add a title tag.");
-    if (has(/^<title> is short/)) actions.push("Extend title to at least 10 characters.");
-    if (has(/^No <h1> on the page$/)) actions.push("Add a single H1 tag.");
-    if (has(/^Multiple <h1> tags/)) actions.push("Reduce to a single H1 tag.");
-    if (has(/images missing alt text$/)) actions.push("Add alt text to remaining images.");
-    if (has(/^No obvious CTA detected$/)) actions.push("Add a primary CTA element.");
-    if (has(/^HTML payload is /)) actions.push("Reduce HTML payload below 1.5 MB.");
+    push(/^Missing <title>$/, "Add a title tag.");
+    push(/^<title> is short/, "Extend title to at least 10 characters.");
+    push(/^No <h1> on the page$/, "Add a single H1 tag.");
+    push(/^Multiple <h1> tags/, "Reduce to a single H1 tag.");
+    push(/images missing alt text$/, "Add alt text to remaining images.");
+    push(/^No obvious CTA detected$/, "Add a primary CTA element.");
+    push(/^HTML payload is /, "Reduce HTML payload below 1.5 MB.");
   }
   if (ch === "seo") {
-    if (has(/^No meta description$/)) actions.push("Add a meta description.");
-    if (has(/^Meta description length /)) actions.push("Adjust meta description length to 50–160 characters.");
-    if (has(/^Open Graph tags missing/)) actions.push("Add missing Open Graph image.");
-    if (has(/^No Twitter card meta$/)) actions.push("Add Twitter card meta tag.");
-    if (has(/^No structured data/)) actions.push("Add JSON-LD structured data.");
-    if (has(/^robots\.txt: (?!200$)/)) actions.push("Restore robots.txt.");
-    if (has(/^sitemap\.xml: (?!200$)/)) actions.push("Restore sitemap.xml.");
-    if (has(/sampled links broken$/)) actions.push("Fix broken internal links.");
+    push(/^No meta description$/, "Add a meta description.");
+    push(/^Meta description length /, "Adjust meta description length to 50–160 characters.");
+    push(/^Open Graph tags missing/, "Add missing Open Graph image.");
+    push(/^No Twitter card meta$/, "Add Twitter card meta tag.");
+    push(/^No structured data/, "Add JSON-LD structured data.");
+    push(/^robots\.txt: (?!200$)/, "Restore robots.txt.");
+    push(/^sitemap\.xml: (?!200$)/, "Restore sitemap.xml.");
+    push(/sampled links broken$/, "Fix broken internal links.");
   }
   if (ch === "funnel") {
-    if (has(/^No checkout \/ cart \/ pricing path/)) actions.push("Add a discoverable checkout path from the homepage.");
-    if (has(/^Checkout page returns /)) actions.push("Restore checkout page (non-2xx response).");
-    if (has(/^Checkout page failed to fetch/)) actions.push("Restore checkout page reachability.");
-    if (has(/^No payment provider script on the checkout/)) actions.push("Restore payment provider integration.");
-    if (has(/^Stripe expected but no publishable key/)) actions.push("Add Stripe publishable key to checkout page.");
-    if (has(/^Stripe\.js loaded but no card input/)) actions.push("Restore Stripe Elements rendering.");
-    if (has(/^No 'Pay' \/ 'Order' button/)) actions.push("Confirm pay button renders after JS execution.");
-    if (has(/^Visible error\/unavailable text/)) actions.push("Resolve visible error messages on checkout.");
-    // Cross-channel actions from browser failures
+    push(/^No checkout \/ cart \/ pricing path/, "Add a discoverable checkout path from the homepage.");
+    push(/^Checkout page returns /, "Restore checkout page (non-2xx response).");
+    push(/^Checkout page failed to fetch/, "Restore checkout page reachability.");
+    push(/^No payment provider script on the checkout/, "Restore payment provider integration.");
+    push(/^Stripe expected but no publishable key/, "Add Stripe publishable key to checkout page.");
+    push(/^Stripe\.js loaded but no card input/, "Restore Stripe Elements rendering.");
+    push(/^No 'Pay' \/ 'Order' button/, "Confirm pay button renders after JS execution.");
+    push(/^Visible error\/unavailable text/, "Resolve visible error messages on checkout.");
+    // Cross-channel actions from browser failures (hard breakages → "issue")
     const checkoutFailed = (run.jobs.browser.result?.details as
       | { checkout?: { failedRequests?: { url: string; status: number }[] } }
       | undefined)?.checkout?.failedRequests ?? [];
     if (checkoutFailed.some((r) => r.status === 404 && /\/wp-content\/plugins\//.test(r.url))) {
-      actions.push("Fix missing plugin assets.");
+      tagged.push({ action: "Fix missing plugin assets.", severity: "issue" });
     }
     if (checkoutFailed.some((r) => r.status === 403 && /admin-ajax/.test(r.url))) {
-      actions.push("Resolve 403 on admin-ajax.");
+      tagged.push({ action: "Resolve 403 on admin-ajax.", severity: "issue" });
     }
   }
   if (ch === "email") {
-    if (has(/^No common ESP script detected$/)) actions.push("Add ESP integration if email automation is required.");
-    if (has(/^No email capture on this page$/)) actions.push("Add an email signup form.");
-    if (has(/^No mailto: contact link found$/)) actions.push("Add mailto contact link.");
-    if (has(/^Privacy or consent signals missing$/)) actions.push("Add privacy and consent indicators.");
+    push(/^No common ESP script detected$/, "Add ESP integration if email automation is required.");
+    push(/^No email capture on this page$/, "Add an email signup form.");
+    push(/^No mailto: contact link found$/, "Add mailto contact link.");
+    push(/^Privacy or consent signals missing$/, "Add privacy and consent indicators.");
   }
   if (ch === "deliverability") {
-    if (has(/^No SPF record$/)) actions.push("Add SPF record.");
-    if (has(/^SPF present but weak policy/)) actions.push("Tighten SPF terminating mechanism to ~all or -all.");
-    if (has(/^SPF has \d+ include lookups$/)) actions.push("Reduce SPF include lookups below 10.");
-    if (has(/^No DMARC record$/)) actions.push("Add DMARC record (start at p=none for monitoring).");
-    if (has(/^DMARC policy: p=none/)) actions.push("Promote DMARC policy to p=quarantine after the monitoring period.");
-    if (has(/^DMARC record present but policy not set$/)) actions.push("Set DMARC policy (p=none, p=quarantine, or p=reject).");
-    if (has(/^No DKIM found at common selectors$/)) actions.push("Configure DKIM signing on the sending mail server.");
-    if (has(/^No MX records/)) actions.push("Add MX records.");
-    if (has(/^No MTA-STS record$/)) actions.push("Add MTA-STS record and policy file.");
-    if (has(/^SPF-listed IP .* has no PTR record$/)) actions.push("Add PTR (reverse DNS) records for SPF-authorized IPs.");
+    push(/^No SPF record$/, "Add SPF record.");
+    push(/^SPF present but weak policy/, "Tighten SPF terminating mechanism to ~all or -all.");
+    push(/^SPF has \d+ include lookups$/, "Reduce SPF include lookups below 10.");
+    push(/^No DMARC record$/, "Add DMARC record (start at p=none for monitoring).");
+    push(/^DMARC policy: p=none/, "Promote DMARC policy to p=quarantine after the monitoring period.");
+    push(/^DMARC record present but policy not set$/, "Set DMARC policy (p=none, p=quarantine, or p=reject).");
+    push(/^No DKIM found at common selectors$/, "Configure DKIM signing on the sending mail server.");
+    push(/^No MX records/, "Add MX records.");
+    push(/^No MTA-STS record$/, "Add MTA-STS record and policy file.");
+    push(/^SPF-listed IP .* has no PTR record$/, "Add PTR (reverse DNS) records for SPF-authorized IPs.");
   }
   if (ch === "social") {
-    if (has(/^No meta description for context/)) actions.push("Add a meta description.");
+    push(/^No meta description for context/, "Add a meta description.");
     // Cross-channel: Open Graph image missing in SEO findings
     const seoFindings = run.jobs.seo.result?.findings ?? [];
     const ogIssue = seoFindings.find((f) => f.label === "Open Graph tags missing or incomplete");
     if (ogIssue && !/og:image: yes/.test(ogIssue.detail ?? "")) {
-      actions.push("Add Open Graph image.");
+      tagged.push({ action: "Add Open Graph image.", severity: ogIssue.severity });
     }
   }
   if (ch === "browser") {
-    if (has(/^Homepage navigation failed/)) actions.push("Restore homepage reachability in browser.");
-    if (has(/JavaScript error\(s\) on (homepage|checkout)/)) actions.push("Resolve JavaScript errors.");
-    if (has(/failed network request\(s\) on (homepage|checkout)/)) actions.push("Fix failed network requests.");
-    if (has(/^No checkout path discovered in the rendered DOM$/)) actions.push("Surface a checkout path from the homepage DOM.");
-    if (has(/^Checkout page failed to load in browser$/)) actions.push("Restore checkout page reachability.");
-    if (has(/^No Stripe activity in browser/)) actions.push("Restore payment provider scripts on checkout.");
-    if (has(/^Stripe\.js loaded but no Elements iframe/)) actions.push("Restore Stripe Elements rendering on checkout.");
-    if (has(/^No pay\/order button rendered in browser$/)) actions.push("Confirm pay button renders after JS execution.");
+    push(/^Homepage navigation failed/, "Restore homepage reachability in browser.");
+    push(/JavaScript error\(s\) on (homepage|checkout)/, "Resolve JavaScript errors.");
+    push(/failed network request\(s\) on (homepage|checkout)/, "Fix failed network requests.");
+    push(/^No checkout path discovered in the rendered DOM$/, "Surface a checkout path from the homepage DOM.");
+    push(/^Checkout page failed to load in browser$/, "Restore checkout page reachability.");
+    push(/^No Stripe activity in browser/, "Restore payment provider scripts on checkout.");
+    push(/^Stripe\.js loaded but no Elements iframe/, "Restore Stripe Elements rendering on checkout.");
+    push(/^No pay\/order button rendered in browser$/, "Confirm pay button renders after JS execution.");
   }
 
-  return actions;
+  return tagged;
+}
+
+function actionsForChannel(ch: Channel, findings: Finding[], run: Run): string[] {
+  return taggedActionsForChannel(ch, findings, run).map((t) => t.action);
 }
 
 // ── Overall result + final summary ──────────────────────────────────────
@@ -1238,6 +1251,177 @@ function VonageReadiness({ run }: { run: Run }) {
   );
 }
 
+// ── Comms Risk Score (procurement-facing single number) ─────────────────
+// Weighted rollup of the four enterprise-readiness pillars. The weights bias
+// procurement-critical pillars (Compliance, UCaaS) over future-proofing (AI).
+function computeCommsRiskScore(run: Run): { score: number; tier: { label: string; color: string } } {
+  const ccaas = readinessScore(run, ["ivr", "audit"]);
+  const ucaas = readinessScore(run, ["deliverability", "email"]);
+  const ai = readinessScore(run, ["browser", "social", "seo"]);
+  const compliance = readinessScore(run, ["deliverability", "ivr"]);
+  const weighted =
+    ccaas * 0.25 +
+    ucaas * 0.25 +
+    ai * 0.20 +
+    compliance * 0.30;
+  const score = Math.round(weighted);
+
+  let tier: { label: string; color: string };
+  if (score >= 80) tier = { label: "LOW RISK", color: C.ok };
+  else if (score >= 60) tier = { label: "MEDIUM RISK", color: C.warn };
+  else if (score >= 40) tier = { label: "HIGH RISK", color: C.danger };
+  else tier = { label: "CRITICAL RISK", color: C.danger };
+
+  return { score, tier };
+}
+
+function CommsRiskScoreBand({ run }: { run: Run }) {
+  const { score, tier } = computeCommsRiskScore(run);
+  return (
+    <View
+      style={{
+        marginBottom: 18,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: tier.color,
+        borderRadius: 8,
+        backgroundColor: "#fff",
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+        <Text style={[styles.sectionLabel, { color: tier.color, marginRight: 10 }] as never}>
+          ENTERPRISE COMMS RISK SCORE
+        </Text>
+        <View style={[styles.statusPill, { borderColor: tier.color, backgroundColor: "#fff" }] as never}>
+          <Text style={[styles.statusPillText, { color: tier.color }] as never}>{tier.label}</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", marginBottom: 6 }}>
+        <Text style={{ fontSize: 28, fontFamily: "Helvetica-Bold", color: C.text }}>{score}</Text>
+        <Text style={{ fontSize: 12, color: C.muted, marginLeft: 4, marginBottom: 4 }}>/ 100</Text>
+      </View>
+      <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted }] as never}>
+        Procurement-facing rollup of CCaaS (25%), UCaaS (25%), AI-Interaction (20%),
+        and Enterprise Compliance Alignment (30%). This is the single number to
+        forward inside an enterprise procurement review.
+      </Text>
+    </View>
+  );
+}
+
+// ── Remediation Planner ─────────────────────────────────────────────────
+// Aggregates severity-tagged actions across all channels into time-boxed plans:
+// P1 (issue) → 48h, P2 (warn) → 7d.
+function collectRemediationPlan(run: Run): {
+  p1: { channel: Channel; action: string }[];
+  p2: { channel: Channel; action: string }[];
+} {
+  const p1: { channel: Channel; action: string }[] = [];
+  const p2: { channel: Channel; action: string }[] = [];
+  for (const ch of channels) {
+    const findings = run.jobs[ch].result?.findings ?? [];
+    if (findings.length === 0) continue;
+    for (const t of taggedActionsForChannel(ch, findings, run)) {
+      if (t.severity === "issue") p1.push({ channel: ch, action: t.action });
+      else if (t.severity === "warn") p2.push({ channel: ch, action: t.action });
+    }
+  }
+  return { p1, p2 };
+}
+
+function RemediationPlanBucket({
+  title,
+  badge,
+  badgeColor,
+  badgeBg,
+  badgeBorder,
+  due,
+  items,
+}: {
+  title: string;
+  badge: string;
+  badgeColor: string;
+  badgeBg: string;
+  badgeBorder: string;
+  due: string;
+  items: { channel: Channel; action: string }[];
+}) {
+  const grouped = new Map<Channel, string[]>();
+  for (const it of items) {
+    if (!grouped.has(it.channel)) grouped.set(it.channel, []);
+    grouped.get(it.channel)!.push(it.action);
+  }
+  return (
+    <View
+      style={{
+        marginBottom: 14,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: badgeBorder,
+        borderRadius: 8,
+        backgroundColor: badgeBg,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+        <Text style={[styles.sectionLabel, { color: badgeColor, marginRight: 10 }] as never}>{badge}</Text>
+        <Text style={{ fontSize: 12, fontFamily: "Helvetica-Bold", color: C.text }}>{title}</Text>
+        <Text style={{ fontSize: 9, color: C.muted, marginLeft: 10 }}>Due: {due}</Text>
+      </View>
+      {items.length === 0 ? (
+        <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted }] as never}>
+          No items in this bucket.
+        </Text>
+      ) : (
+        Array.from(grouped.entries()).map(([ch, actions]) => (
+          <View key={ch} style={{ marginTop: 6 }}>
+            <Text style={[styles.subHead, { color: C.muted, fontSize: 8, letterSpacing: 0.6, marginTop: 4 }] as never}>
+              {channelLabels[ch].toUpperCase()}
+            </Text>
+            {actions.map((a, i) => (
+              <View key={i} style={styles.actionRow}>
+                <Text style={styles.actionDot}>•</Text>
+                <Text style={styles.actionText}>{a}</Text>
+              </View>
+            ))}
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
+function RemediationPlanner({ run }: { run: Run }) {
+  const { p1, p2 } = collectRemediationPlan(run);
+  return (
+    <View>
+      <Text style={styles.sectionHead}>Remediation Plan</Text>
+      <Text style={[styles.fieldValue, { marginBottom: 12 }] as never}>
+        Findings transformed into a time-boxed action plan. P1 items are
+        procurement-blocking and should be remediated within 48 hours; P2
+        items represent watch-list quality issues for the next planning cycle.
+      </Text>
+      <RemediationPlanBucket
+        title="48-Hour Plan"
+        badge="CRITICAL · P1"
+        badgeColor={C.danger}
+        badgeBg={C.dangerSoft}
+        badgeBorder={C.dangerBorder}
+        due="48 hours"
+        items={p1}
+      />
+      <RemediationPlanBucket
+        title="7-Day Plan"
+        badge="WATCH · P2"
+        badgeColor={C.warn}
+        badgeBg={C.warnSoft}
+        badgeBorder={C.warnBorder}
+        due="7 days"
+        items={p2}
+      />
+    </View>
+  );
+}
+
 // ── Document ────────────────────────────────────────────────────────────
 function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
   const completed = channels
@@ -1257,10 +1441,11 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
       author="Communications Intelligence Platform"
       subject={`Communications intelligence report for ${run.url}`}
     >
-      {/* PAGE 1 — Title, subtext, score, overall result */}
+      {/* PAGE 1 — Title, subtext, overall score, Enterprise Comms Risk band, overall result */}
       <Page size="A4" style={styles.page}>
         <HeaderPill score={overallScore} />
         <Hero run={run} overallScore={overallScore} />
+        <CommsRiskScoreBand run={run} />
         <OverallResult run={run} carina={carina} />
       </Page>
 
@@ -1269,7 +1454,12 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
         <RiskSummary run={run} />
       </Page>
 
-      {/* PAGE 3 — Vonage / CCaaS Readiness mapping */}
+      {/* PAGE 3 — Remediation Plan (48h / 7d buckets) */}
+      <Page size="A4" style={styles.page}>
+        <RemediationPlanner run={run} />
+      </Page>
+
+      {/* PAGE 4 — Vonage / CCaaS Readiness mapping */}
       <Page size="A4" style={styles.page}>
         <VonageReadiness run={run} />
       </Page>
