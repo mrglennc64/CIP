@@ -852,7 +852,7 @@ function HeaderPill({ score }: { score: number }) {
       <View
         style={[styles.pill, { borderColor: s.border, backgroundColor: s.bg }] as never}
       >
-        <Text style={[styles.pillText, { color: s.fg }] as never}>✓  {s.label}</Text>
+        <Text style={[styles.pillText, { color: s.fg }] as never}>{s.label}</Text>
       </View>
     </View>
   );
@@ -1532,8 +1532,8 @@ function AIAgentReadinessSummary({ run }: { run: Run }) {
       </Text>
       {signals.map((s, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 2 }}>
-          <Text style={{ width: 14, fontSize: 11, fontFamily: "Helvetica-Bold", color: s.ok ? C.ok : C.danger }}>
-            {s.ok ? "✓" : "✗"}
+          <Text style={{ width: 18, fontSize: 8, fontFamily: "Helvetica-Bold", color: s.ok ? C.ok : C.danger, letterSpacing: 0.6 }}>
+            {s.ok ? "OK" : "--"}
           </Text>
           <Text style={{ flex: 1, fontSize: 10, color: C.text }}>{s.name}</Text>
           <Text style={{ fontSize: 9, color: s.ok ? C.ok : C.danger, fontFamily: "Helvetica-Bold" }}>
@@ -1567,7 +1567,7 @@ function HealthyChannels({ run }: { run: Run }) {
         <View style={{ borderWidth: 1, borderColor: C.okBorder, borderRadius: 6, backgroundColor: C.okSoft }}>
           {healthy.map((h, i) => (
             <View key={h.ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.okBorder }}>
-              <Text style={{ width: 14, fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ok }}>✓</Text>
+              <Text style={{ width: 22, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.ok, letterSpacing: 0.6 }}>OK</Text>
               <Text style={{ flex: 1, fontSize: 10, color: C.text }}>{channelLabels[h.ch]}</Text>
               <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ok }}>{h.score}</Text>
             </View>
@@ -1599,7 +1599,7 @@ function LongitudinalSection() {
             <Text style={{ flex: 2, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6 }}>METRIC</Text>
             <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>PREVIOUS</Text>
             <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>CURRENT</Text>
-            <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>Δ</Text>
+            <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>DIFF</Text>
           </View>
           {["Overall score", "Critical findings", "Watch findings", "Healthy channels"].map((m, i) => (
             <View key={m} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 5, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
@@ -1630,6 +1630,277 @@ function LongitudinalSection() {
           re-scans roll out with the drift-detection module — first delta report
           fires after the second scan of the same target.
         </Text>
+      </View>
+    </View>
+  );
+}
+
+// ── Procurement callouts: Sender Auth, Voice Channel, Checkout ──────────
+type CalloutTier = { label: string; color: string; bg: string; border: string };
+function calloutTierFor(critical: number, watch: number): CalloutTier {
+  if (critical > 0) return { label: "CRITICAL", color: C.danger, bg: C.dangerSoft, border: C.dangerBorder };
+  if (watch > 0) return { label: "AT RISK", color: C.warn, bg: C.warnSoft, border: C.warnBorder };
+  return { label: "HEALTHY", color: C.ok, bg: C.okSoft, border: C.okBorder };
+}
+
+function ProcurementCallout({
+  heading,
+  tier,
+  items,
+  impact,
+}: {
+  heading: string;
+  tier: CalloutTier;
+  items: { name: string; status: string; ok: boolean }[];
+  impact: string;
+}) {
+  return (
+    <View
+      style={{
+        marginBottom: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderLeftWidth: 4,
+        borderColor: tier.border,
+        borderLeftColor: tier.color,
+        borderRadius: 6,
+        backgroundColor: tier.bg,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+        <Text style={[styles.sectionLabel, { color: tier.color, marginRight: 10 }] as never}>
+          {heading.toUpperCase()}
+        </Text>
+        <View style={[styles.statusPill, { borderColor: tier.color, backgroundColor: "#fff" }] as never}>
+          <Text style={[styles.statusPillText, { color: tier.color }] as never}>{tier.label}</Text>
+        </View>
+      </View>
+      {items.map((it, i) => (
+        <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 2 }}>
+          <Text style={{ width: 24, fontSize: 8, fontFamily: "Helvetica-Bold", color: it.ok ? C.ok : C.danger, letterSpacing: 0.6 }}>
+            {it.ok ? "OK" : "FAIL"}
+          </Text>
+          <Text style={{ flex: 1, fontSize: 10, color: C.text }}>{it.name}</Text>
+          <Text style={{ fontSize: 9, color: it.ok ? C.ok : C.danger, fontFamily: "Helvetica-Bold" }}>{it.status}</Text>
+        </View>
+      ))}
+      <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted, marginTop: 8, fontFamily: "Helvetica-Oblique" }] as never}>
+        Impact: {impact}
+      </Text>
+    </View>
+  );
+}
+
+function SenderAuthSummary({ run }: { run: Run }) {
+  const fs = run.jobs.deliverability.result?.findings ?? [];
+  const spf = !fs.some((f) => f.label === "No SPF record");
+  const dmarc = !fs.some((f) => f.label === "No DMARC record" || f.label === "DMARC record present but policy not set");
+  const dkim = !fs.some((f) => f.label === "No DKIM found at common selectors");
+  const mx = !fs.some((f) => /^No MX records/.test(f.label));
+  const items = [
+    { name: "SPF", status: spf ? "Present" : "Missing", ok: spf },
+    { name: "DMARC", status: dmarc ? "Present" : "Missing", ok: dmarc },
+    { name: "DKIM", status: dkim ? "Present" : "Missing", ok: dkim },
+    { name: "MX", status: mx ? "Present" : "Missing", ok: mx },
+  ];
+  const failed = items.filter((i) => !i.ok).length;
+  const tier = calloutTierFor(failed >= 2 ? failed : 0, failed === 1 ? 1 : 0);
+  return (
+    <ProcurementCallout
+      heading="Sender Authentication"
+      tier={tier}
+      items={items}
+      impact="Mail without SPF/DMARC/DKIM may be rejected or quarantined by enterprise inbox providers. The #1 sender-posture check in vendor-security reviews."
+    />
+  );
+}
+
+function VoiceChannelCompliance({ run }: { run: Run }) {
+  const fs = run.jobs.ivr.result?.findings ?? [];
+  const gdpr = !fs.some((f) => /GDPR|privacy disclosure/i.test(f.label) && f.severity === "issue");
+  const recording = !fs.some((f) => /recording disclosure/i.test(f.label) && f.severity === "issue");
+  const noDeadEnds = !fs.some((f) => /dead-end/i.test(f.label));
+  const hasAgentTransfer = !fs.some((f) => /no agent transfer|without agent transfer/i.test(f.label));
+  const noDisengagement = !fs.some((f) => /disengagement trigger/i.test(f.label));
+  const items = [
+    { name: "GDPR / privacy disclosure", status: gdpr ? "Present" : "Missing", ok: gdpr },
+    { name: "Call-recording disclosure", status: recording ? "Present" : "Missing", ok: recording },
+    { name: "No dead-end nodes", status: noDeadEnds ? "Clean" : "Detected", ok: noDeadEnds },
+    { name: "Live agent transfer", status: hasAgentTransfer ? "Available" : "Missing", ok: hasAgentTransfer },
+    { name: "No disengagement triggers", status: noDisengagement ? "Clean" : "Detected", ok: noDisengagement },
+  ];
+  const critical = items.filter((i) => !i.ok && /GDPR|dead-end/i.test(i.name)).length;
+  const watch = items.filter((i) => !i.ok && !/GDPR|dead-end/i.test(i.name)).length;
+  const tier = calloutTierFor(critical, watch);
+  return (
+    <ProcurementCallout
+      heading="Voice Channel Compliance"
+      tier={tier}
+      items={items}
+      impact="Missing GDPR disclosure or dead-end paths in the IVR may fail enterprise compliance review and trigger consumer-protection scrutiny in regulated markets."
+    />
+  );
+}
+
+function CheckoutPaymentStatus({ run }: { run: Run }) {
+  const funnelFs = run.jobs.funnel.result?.findings ?? [];
+  const browserFs = run.jobs.browser.result?.findings ?? [];
+
+  const noCheckoutPath = funnelFs.some((f) => /^No checkout/.test(f.label));
+  const checkoutBroken = funnelFs.some((f) => /^Checkout page returns|failed to fetch/.test(f.label));
+  const noPaymentScript = funnelFs.some((f) => /^No payment provider/.test(f.label));
+  const noPayButton = browserFs.some((f) => /^No pay\/order button/.test(f.label));
+  const browserError = browserFs.some((f) => f.severity === "issue" && /JavaScript error|failed network/i.test(f.label));
+
+  const items = [
+    { name: "Checkout / contact path discoverable", status: noCheckoutPath ? "Missing" : "Present", ok: !noCheckoutPath },
+    { name: "Checkout reachable (HTTP 2xx)", status: checkoutBroken ? "Broken" : "Reachable", ok: !checkoutBroken },
+    { name: "Payment provider script loads", status: noPaymentScript ? "Missing" : "Present", ok: !noPaymentScript },
+    { name: "Pay / order button renders", status: noPayButton ? "Missing" : "Renders", ok: !noPayButton },
+    { name: "No browser-side errors on critical surfaces", status: browserError ? "Errors" : "Clean", ok: !browserError },
+  ];
+  const failed = items.filter((i) => !i.ok).length;
+  // Checkout is more about lead-capture for B2B SaaS; weight tier as "AT RISK" rather than "CRITICAL" unless all fail
+  const tier = calloutTierFor(failed >= 3 ? failed : 0, failed > 0 ? failed : 0);
+  return (
+    <ProcurementCallout
+      heading="Checkout / Lead-Capture Status"
+      tier={tier}
+      items={items}
+      impact="Broken checkout or contact paths prevent prospects from converting on the landing surface. For B2B comms vendors this manifests as missed demo bookings."
+    />
+  );
+}
+
+// ── Channel Health Summary table (compact, near top) ────────────────────
+function channelStatusLabel(score: number): { label: string; color: string } {
+  if (score >= 80) return { label: "Healthy", color: C.ok };
+  if (score >= 60) return { label: "Needs Work", color: C.warn };
+  return { label: "Critical", color: C.danger };
+}
+function ChannelHealthSummary({ run }: { run: Run }) {
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={styles.sectionHead}>Channel Health Summary</Text>
+      <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 6 }}>
+        <View style={{ flexDirection: "row", backgroundColor: C.bg, borderBottomWidth: 1, borderBottomColor: C.border, paddingHorizontal: 8, paddingVertical: 5 }}>
+          <Text style={{ flex: 3, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6 }}>CHANNEL</Text>
+          <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>SCORE</Text>
+          <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>STATUS</Text>
+        </View>
+        {channels.map((ch, i) => {
+          const score = run.jobs[ch].result?.score;
+          const s = typeof score === "number" ? channelStatusLabel(score) : { label: "—", color: C.muted };
+          return (
+            <View key={ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 5, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+              <Text style={{ flex: 3, fontSize: 9.5, color: C.text }}>{channelLabels[ch]}</Text>
+              <Text style={{ flex: 1, fontSize: 10, fontFamily: "Helvetica-Bold", color: C.text, textAlign: "right" }}>{typeof score === "number" ? score : "—"}</Text>
+              <Text style={{ flex: 1, fontSize: 9, fontFamily: "Helvetica-Bold", color: s.color, textAlign: "right" }}>{s.label}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ── Severity Distribution bar (stacked horizontal bar) ──────────────────
+function SeverityDistribution({ run }: { run: Run }) {
+  const all = channels.flatMap((ch) => run.jobs[ch].result?.findings ?? []);
+  const critical = all.filter((f) => f.severity === "issue").length;
+  const watch = all.filter((f) => f.severity === "warn").length;
+  const passing = all.filter((f) => f.severity === "ok").length;
+  const total = Math.max(1, critical + watch + passing);
+  const cw = (critical / total) * 100;
+  const ww = (watch / total) * 100;
+  const pw = (passing / total) * 100;
+  const W = 520;
+  const H = 14;
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={[styles.sectionLabel, { color: C.primary, marginBottom: 4 }] as never}>SEVERITY DISTRIBUTION</Text>
+      <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 14 }}>
+        <Path d={`M 0 0 H ${(cw / 100) * W} V ${H} H 0 Z`} fill={C.danger} />
+        <Path d={`M ${(cw / 100) * W} 0 H ${((cw + ww) / 100) * W} V ${H} H ${(cw / 100) * W} Z`} fill={C.warn} />
+        <Path d={`M ${((cw + ww) / 100) * W} 0 H ${((cw + ww + pw) / 100) * W} V ${H} H ${((cw + ww) / 100) * W} Z`} fill={C.ok} />
+      </Svg>
+      <View style={{ flexDirection: "row", marginTop: 4 }}>
+        <Text style={{ fontSize: 9, color: C.danger, marginRight: 14, fontFamily: "Helvetica-Bold" }}>{critical} Critical</Text>
+        <Text style={{ fontSize: 9, color: C.warn, marginRight: 14, fontFamily: "Helvetica-Bold" }}>{watch} Watch</Text>
+        <Text style={{ fontSize: 9, color: C.ok, fontFamily: "Helvetica-Bold" }}>{passing} Passing</Text>
+      </View>
+    </View>
+  );
+}
+
+// ── Confidence Level per channel ────────────────────────────────────────
+// Derived from job completeness + result presence + duration sanity.
+function channelConfidence(job: Job): { label: string; color: string } {
+  if (job.status !== "done" || !job.result) return { label: "LOW", color: C.danger };
+  if (job.error) return { label: "LOW", color: C.danger };
+  const findings = job.result.findings.length;
+  if (findings === 0) return { label: "MEDIUM", color: C.warn };
+  // Inventory uses crt.sh with DNS fallback; flag medium if fallback was used (signaled by short surface count)
+  const details = job.result.details as { mode?: string } | undefined;
+  if (details?.mode === "dns-fallback") return { label: "MEDIUM", color: C.warn };
+  return { label: "HIGH", color: C.ok };
+}
+
+function ChannelConfidenceTable({ run }: { run: Run }) {
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={styles.sectionHead}>Per-Channel Confidence</Text>
+      <Text style={[styles.fieldValue, { color: C.muted, marginBottom: 8 }] as never}>
+        Confidence reflects whether the channel completed cleanly with primary
+        signal sources. Medium / Low confidence means partial data — re-run
+        recommended before procurement use.
+      </Text>
+      <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 6 }}>
+        {channels.map((ch, i) => {
+          const conf = channelConfidence(run.jobs[ch]);
+          return (
+            <View key={ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 5, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+              <Text style={{ flex: 3, fontSize: 9.5, color: C.text }}>{channelLabels[ch]}</Text>
+              <View style={[styles.statusPill, { borderColor: conf.color, backgroundColor: "#fff" }] as never}>
+                <Text style={[styles.statusPillText, { color: conf.color }] as never}>{conf.label}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ── Recommended Next Steps (closing CTA) ────────────────────────────────
+function RecommendedNextSteps() {
+  const steps = [
+    "Fix P1 (critical) items within 48 hours — see Remediation Plan.",
+    "Fix P2 (watch) items within 7 days — see Remediation Plan.",
+    "Schedule pre-pitch operator review (TLS expiry, DNS propagation, shadow subdomains).",
+    "Enable scheduled re-scans to populate Before/After delta and drift detection.",
+    "Re-scan after remediation to confirm score lift and resolved-finding count.",
+  ];
+  return (
+    <View style={{ marginBottom: 14, padding: 12, borderWidth: 1, borderColor: C.primary, borderRadius: 6, backgroundColor: C.primarySoft }}>
+      <Text style={[styles.sectionLabel, { color: C.primary, marginBottom: 6 }] as never}>RECOMMENDED NEXT STEPS</Text>
+      {steps.map((s, i) => (
+        <View key={i} style={styles.actionRow}>
+          <Text style={[styles.actionDot, { color: C.primary }] as never}>{i + 1}.</Text>
+          <Text style={styles.actionText}>{s}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ── Operator Review status badge (footer) ───────────────────────────────
+function OperatorReviewBadge() {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginTop: 4, marginBottom: 4 }}>
+      <Text style={{ fontSize: 8, color: C.muted, marginRight: 6, letterSpacing: 0.6 }}>OPERATOR REVIEW:</Text>
+      <View style={[styles.statusPill, { borderColor: C.warn, backgroundColor: "#fff" }] as never}>
+        <Text style={[styles.statusPillText, { color: C.warn }] as never}>PENDING</Text>
       </View>
     </View>
   );
@@ -1800,36 +2071,47 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
         <OverallResult run={run} carina={carina} />
       </Page>
 
-      {/* PAGE 2 — Executive view: Summary table, Top 5 findings, Risk Summary counts */}
+      {/* PAGE 2 — Procurement callouts (Sender Auth, Voice Compliance, Checkout) */}
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.sectionHead}>Procurement Risk Callouts</Text>
+        <SenderAuthSummary run={run} />
+        <VoiceChannelCompliance run={run} />
+        <CheckoutPaymentStatus run={run} />
+      </Page>
+
+      {/* PAGE 3 — Scannable summary: Channel Health, Exec Summary, Severity bar, Top 5, Risk counts */}
       <Page size="A4" style={styles.page}>
         <ExecutiveSummaryTable run={run} />
+        <ChannelHealthSummary run={run} />
+        <SeverityDistribution run={run} />
         <TopFindings run={run} />
         <RiskSummary run={run} />
       </Page>
 
-      {/* PAGE 3 — Remediation Plan (48h / 7d buckets) */}
+      {/* PAGE 4 — Remediation Plan (48h / 7d buckets) */}
       <Page size="A4" style={styles.page}>
         <RemediationPlanner run={run} />
       </Page>
 
-      {/* PAGE 4 — Longitudinal Tracking (before/after, drift, next scan placeholders) */}
+      {/* PAGE 5 — Longitudinal Tracking (before/after, drift, next scan placeholders) */}
       <Page size="A4" style={styles.page}>
         <LongitudinalSection />
       </Page>
 
-      {/* PAGE 5 — Vonage / CCaaS Readiness + AI-Agent Readiness Summary */}
+      {/* PAGE 6 — Vonage / CCaaS Readiness + AI-Agent Readiness Summary */}
       <Page size="A4" style={styles.page}>
         <VonageReadiness run={run} />
         <AIAgentReadinessSummary run={run} />
       </Page>
 
-      {/* PAGE 6 — Channel scores table */}
+      {/* PAGE 7 — Channel scores bar chart + Per-channel confidence */}
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel scores</Text>
         <ChannelKpis run={run} />
+        <ChannelConfidenceTable run={run} />
       </Page>
 
-      {/* PAGE 7+ — Channel findings */}
+      {/* PAGE 8+ — Channel findings */}
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel findings</Text>
         {channels.slice(0, 4).map((ch) => (
@@ -1844,12 +2126,14 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
         ))}
       </Page>
 
-      {/* Final page — Healthy channels, Operator notes, Summary, Audit trail */}
+      {/* Final page — Healthy, Operator notes, Next Steps, Summary, Audit, Op Review badge */}
       <Page size="A4" style={styles.page}>
         <HealthyChannels run={run} />
         <OperatorNotes />
+        <RecommendedNextSteps />
         <Summary run={run} carina={carina} />
         <AuditTrail run={run} carina={carina} />
+        <OperatorReviewBadge />
         <Footer />
       </Page>
     </Document>
