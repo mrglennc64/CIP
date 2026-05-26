@@ -16,6 +16,10 @@ import {
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
+
+// Note: Inter font registration was attempted but @fontsource/inter ships
+// woff2 only (no TTF), and the Google Fonts CDN TTF URLs change frequently.
+// Sticking with built-in Helvetica for stability. Future: bundle Inter TTFs.
 import {
   channels,
   type Channel,
@@ -60,13 +64,49 @@ const C = {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 36,
-    paddingBottom: 36,
-    paddingHorizontal: 40,
+    paddingTop: 56,
+    paddingBottom: 48,
+    paddingHorizontal: 48,
     fontFamily: "Helvetica",
     fontSize: 10,
     color: C.text,
     backgroundColor: C.surface,
+    lineHeight: 1.5,
+  },
+  runningHeader: {
+    position: "absolute",
+    top: 24,
+    left: 48,
+    right: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 6,
+    borderBottomWidth: 0.5,
+    borderBottomColor: C.border,
+  },
+  runningHeaderTitle: {
+    fontSize: 8,
+    color: C.muted,
+    letterSpacing: 0.8,
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+  },
+  runningFooter: {
+    position: "absolute",
+    bottom: 24,
+    left: 48,
+    right: 48,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 6,
+    borderTopWidth: 0.5,
+    borderTopColor: C.border,
+  },
+  runningFooterText: {
+    fontSize: 7,
+    color: C.muted,
+    letterSpacing: 0.4,
   },
 
   pillRow: { flexDirection: "row", marginBottom: 14 },
@@ -80,8 +120,8 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 9, fontFamily: "Helvetica-Bold" },
 
-  h1: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.text, marginBottom: 6 },
-  sub: { fontSize: 10, color: C.muted, lineHeight: 1.45 },
+  h1: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.text, marginBottom: 8, letterSpacing: -0.2 },
+  sub: { fontSize: 10.5, color: C.muted, lineHeight: 1.55 },
 
   hero: {
     flexDirection: "row",
@@ -125,13 +165,13 @@ const styles = StyleSheet.create({
   kpiSub: { fontSize: 8, color: C.muted, marginTop: 3 },
 
   sectionHead: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
     color: C.primary,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
-    marginTop: 10,
-    marginBottom: 8,
+    marginTop: 14,
+    marginBottom: 12,
   },
 
   channelBlock: {
@@ -180,7 +220,7 @@ const styles = StyleSheet.create({
   fieldValue: {
     fontSize: 10,
     color: C.text,
-    lineHeight: 1.5,
+    lineHeight: 1.6,
   },
 
   findingRow: {
@@ -770,13 +810,22 @@ function actionsForChannel(ch: Channel, findings: Finding[], run: Run): string[]
 }
 
 // ── Overall result + final summary ──────────────────────────────────────
+function siteIsB2B(run: Run): boolean {
+  const funnelFs = run.jobs.funnel.result?.findings ?? [];
+  const browserFs = run.jobs.browser.result?.findings ?? [];
+  return ![...funnelFs, ...browserFs].some((f) => /Stripe|payment provider on homepage:/i.test(f.label));
+}
 function buildOverallResult(run: Run): string {
   const funnelIssues = (run.jobs.funnel.result?.findings ?? []).filter((f) => f.severity === "issue").length;
   const browserIssues = (run.jobs.browser.result?.findings ?? []).filter((f) => f.severity === "issue").length;
   const all = channels.flatMap((ch) => run.jobs[ch].result?.findings ?? []);
   const total = all.filter((f) => f.severity === "issue").length;
   if (total === 0) return "Site loads. No critical findings.";
-  if (funnelIssues > 0 || browserIssues > 0) return "Site loads. Checkout is non-functional.";
+  if (funnelIssues > 0 || browserIssues > 0) {
+    return siteIsB2B(run)
+      ? "Site loads. Conversion-path gaps detected on the landing surface."
+      : "Site loads. Checkout is non-functional.";
+  }
   return `Site loads. ${total} critical finding${total > 1 ? "s" : ""} identified.`;
 }
 
@@ -848,11 +897,16 @@ function ScoreCircle({
 function HeaderPill({ score }: { score: number }) {
   const s = statusFor(score);
   return (
-    <View style={styles.pillRow}>
+    <View style={[styles.pillRow, { alignItems: "center" }] as never}>
       <View
         style={[styles.pill, { borderColor: s.border, backgroundColor: s.bg }] as never}
       >
         <Text style={[styles.pillText, { color: s.fg }] as never}>{s.label}</Text>
+      </View>
+      <View style={{ flex: 1 }} />
+      <Text style={{ fontSize: 7, color: C.muted, marginRight: 6, letterSpacing: 0.6 }}>OPERATOR REVIEW:</Text>
+      <View style={[styles.statusPill, { borderColor: C.warn, backgroundColor: "#fff", marginLeft: 0 }] as never}>
+        <Text style={[styles.statusPillText, { color: C.warn }] as never}>PENDING</Text>
       </View>
     </View>
   );
@@ -1419,7 +1473,7 @@ function ExecutiveSummaryTable({ run }: { run: Run }) {
         {rows.map((r, i) => {
           const risk = pillarRisk(r.score);
           return (
-            <View key={r.name} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+            <View key={r.name} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border, backgroundColor: i % 2 === 1 ? C.bg : "#fff" }}>
               <Text style={{ flex: 3, fontSize: 10, color: C.text }}>{r.name}</Text>
               <Text style={{ flex: 1, fontSize: 11, fontFamily: "Helvetica-Bold", color: C.text, textAlign: "right" }}>{r.score}</Text>
               <Text style={{ flex: 1, fontSize: 9, fontFamily: "Helvetica-Bold", color: risk.color, textAlign: "right" }}>{risk.label}</Text>
@@ -1459,7 +1513,7 @@ function TopFindings({ run }: { run: Run }) {
           {top.map((f, i) => {
             const tag = f.severity === "issue" ? { label: "P1", color: C.danger } : { label: "P2", color: C.warn };
             return (
-              <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+              <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border, backgroundColor: i % 2 === 1 ? C.bg : "#fff" }}>
                 <Text style={{ width: 16, fontSize: 9, color: C.muted, fontFamily: "Helvetica-Bold" }}>{i + 1}.</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 10, color: C.text }}>{f.label}</Text>
@@ -1645,11 +1699,13 @@ function calloutTierFor(critical: number, watch: number): CalloutTier {
 
 function ProcurementCallout({
   heading,
+  icon,
   tier,
   items,
   impact,
 }: {
   heading: string;
+  icon?: "envelope" | "phone" | "browser" | "shield" | "search" | "funnel" | "globe";
   tier: CalloutTier;
   items: { name: string; status: string; ok: boolean }[];
   impact: string;
@@ -1657,8 +1713,8 @@ function ProcurementCallout({
   return (
     <View
       style={{
-        marginBottom: 12,
-        padding: 12,
+        marginBottom: 14,
+        padding: 14,
         borderWidth: 1,
         borderLeftWidth: 4,
         borderColor: tier.border,
@@ -1666,9 +1722,15 @@ function ProcurementCallout({
         borderRadius: 6,
         backgroundColor: tier.bg,
       }}
+      wrap={false}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-        <Text style={[styles.sectionLabel, { color: tier.color, marginRight: 10 }] as never}>
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+        {icon && (
+          <View style={{ marginRight: 8 }}>
+            <ChannelIcon kind={icon} color={tier.color} size={16} />
+          </View>
+        )}
+        <Text style={[styles.sectionLabel, { color: tier.color, marginRight: 10, marginTop: 0, marginBottom: 0 }] as never}>
           {heading.toUpperCase()}
         </Text>
         <View style={[styles.statusPill, { borderColor: tier.color, backgroundColor: "#fff" }] as never}>
@@ -1708,6 +1770,7 @@ function SenderAuthSummary({ run }: { run: Run }) {
   return (
     <ProcurementCallout
       heading="Sender Authentication"
+      icon="envelope"
       tier={tier}
       items={items}
       impact="Mail without SPF/DMARC/DKIM may be rejected or quarantined by enterprise inbox providers. The #1 sender-posture check in vendor-security reviews."
@@ -1735,6 +1798,7 @@ function VoiceChannelCompliance({ run }: { run: Run }) {
   return (
     <ProcurementCallout
       heading="Voice Channel Compliance"
+      icon="phone"
       tier={tier}
       items={items}
       impact="Missing GDPR disclosure or dead-end paths in the IVR may fail enterprise compliance review and trigger consumer-protection scrutiny in regulated markets."
@@ -1745,29 +1809,55 @@ function VoiceChannelCompliance({ run }: { run: Run }) {
 function CheckoutPaymentStatus({ run }: { run: Run }) {
   const funnelFs = run.jobs.funnel.result?.findings ?? [];
   const browserFs = run.jobs.browser.result?.findings ?? [];
+  const auditFs = run.jobs.audit.result?.findings ?? [];
+
+  // Detect whether this site is B2B (no payment provider expected) or e-commerce.
+  // Signal: any finding mentioning Stripe/payment provider presence implies e-commerce.
+  const paymentDetected = [...funnelFs, ...browserFs].some((f) => /Stripe|payment provider on homepage:/i.test(f.label));
+  const isB2B = !paymentDetected;
 
   const noCheckoutPath = funnelFs.some((f) => /^No checkout/.test(f.label));
   const checkoutBroken = funnelFs.some((f) => /^Checkout page returns|failed to fetch/.test(f.label));
   const noPaymentScript = funnelFs.some((f) => /^No payment provider/.test(f.label));
   const noPayButton = browserFs.some((f) => /^No pay\/order button/.test(f.label));
-  const browserError = browserFs.some((f) => f.severity === "issue" && /JavaScript error|failed network/i.test(f.label));
+  const lowTrust = funnelFs.some((f) => /Trust signals: [01] of 5 present/.test(f.label));
+  const noCta = auditFs.some((f) => f.label === "No obvious CTA detected");
 
-  const items = [
-    { name: "Checkout / contact path discoverable", status: noCheckoutPath ? "Missing" : "Present", ok: !noCheckoutPath },
-    { name: "Checkout reachable (HTTP 2xx)", status: checkoutBroken ? "Broken" : "Reachable", ok: !checkoutBroken },
-    { name: "Payment provider script loads", status: noPaymentScript ? "Missing" : "Present", ok: !noPaymentScript },
-    { name: "Pay / order button renders", status: noPayButton ? "Missing" : "Renders", ok: !noPayButton },
-    { name: "No browser-side errors on critical surfaces", status: browserError ? "Errors" : "Clean", ok: !browserError },
-  ];
+  let items: { name: string; status: string; ok: boolean }[];
+  let heading: string;
+  let impact: string;
+
+  if (isB2B) {
+    // B2B comms vendor — checkout/payment items are irrelevant. Focus on lead-capture quality.
+    heading = "Lead-Capture / Conversion Surface";
+    items = [
+      { name: "Demo / contact path discoverable", status: noCheckoutPath ? "Missing" : "Present", ok: !noCheckoutPath },
+      { name: "Primary CTA on landing surface", status: noCta ? "Missing" : "Present", ok: !noCta },
+      { name: "Trust signals present", status: lowTrust ? "Weak (≤1 of 5)" : "Adequate", ok: !lowTrust },
+      { name: "Landing surface reachable", status: checkoutBroken ? "Broken" : "Reachable", ok: !checkoutBroken },
+      { name: "Payment provider", status: "Not applicable (B2B)", ok: true },
+    ];
+    impact = "B2B comms vendor — no e-commerce checkout expected. Discoverability of demo / contact paths and trust signals on the landing surface determine conversion. Missing CTAs or weak trust signals manifest as lost demo bookings.";
+  } else {
+    // E-commerce — full checkout health matters.
+    heading = "Checkout / Payment Status";
+    items = [
+      { name: "Checkout path discoverable", status: noCheckoutPath ? "Missing" : "Present", ok: !noCheckoutPath },
+      { name: "Checkout reachable (HTTP 2xx)", status: checkoutBroken ? "Broken" : "Reachable", ok: !checkoutBroken },
+      { name: "Payment provider script loads", status: noPaymentScript ? "Missing" : "Present", ok: !noPaymentScript },
+      { name: "Pay / order button renders", status: noPayButton ? "Missing" : "Renders", ok: !noPayButton },
+    ];
+    impact = "Loads but does not complete a transaction means payment scripts load yet the order flow fails before submission. Cannot process orders until the broken step is restored.";
+  }
   const failed = items.filter((i) => !i.ok).length;
-  // Checkout is more about lead-capture for B2B SaaS; weight tier as "AT RISK" rather than "CRITICAL" unless all fail
   const tier = calloutTierFor(failed >= 3 ? failed : 0, failed > 0 ? failed : 0);
   return (
     <ProcurementCallout
-      heading="Checkout / Lead-Capture Status"
+      heading={heading}
+      icon="funnel"
       tier={tier}
       items={items}
-      impact="Broken checkout or contact paths prevent prospects from converting on the landing surface. For B2B comms vendors this manifests as missed demo bookings."
+      impact={impact}
     />
   );
 }
@@ -1792,7 +1882,7 @@ function ChannelHealthSummary({ run }: { run: Run }) {
           const score = run.jobs[ch].result?.score;
           const s = typeof score === "number" ? channelStatusLabel(score) : { label: "—", color: C.muted };
           return (
-            <View key={ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 5, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+            <View key={ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border, backgroundColor: i % 2 === 1 ? C.bg : "#fff" }}>
               <Text style={{ flex: 3, fontSize: 9.5, color: C.text }}>{channelLabels[ch]}</Text>
               <Text style={{ flex: 1, fontSize: 10, fontFamily: "Helvetica-Bold", color: C.text, textAlign: "right" }}>{typeof score === "number" ? score : "—"}</Text>
               <Text style={{ flex: 1, fontSize: 9, fontFamily: "Helvetica-Bold", color: s.color, textAlign: "right" }}>{s.label}</Text>
@@ -1859,7 +1949,7 @@ function ChannelConfidenceTable({ run }: { run: Run }) {
         {channels.map((ch, i) => {
           const conf = channelConfidence(run.jobs[ch]);
           return (
-            <View key={ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 5, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+            <View key={ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border, backgroundColor: i % 2 === 1 ? C.bg : "#fff" }}>
               <Text style={{ flex: 3, fontSize: 9.5, color: C.text }}>{channelLabels[ch]}</Text>
               <View style={[styles.statusPill, { borderColor: conf.color, backgroundColor: "#fff" }] as never}>
                 <Text style={[styles.statusPillText, { color: conf.color }] as never}>{conf.label}</Text>
@@ -1903,6 +1993,62 @@ function OperatorReviewBadge() {
         <Text style={[styles.statusPillText, { color: C.warn }] as never}>PENDING</Text>
       </View>
     </View>
+  );
+}
+
+// ── Running header + footer (fixed, repeats on every page) ──────────────
+function RunningHeader({ run }: { run: Run }) {
+  return (
+    <View style={styles.runningHeader} fixed>
+      <Text style={styles.runningHeaderTitle}>Communications Intelligence Report</Text>
+      <View style={{ flex: 1 }} />
+      <Text style={[styles.runningHeaderTitle, { color: C.text }] as never}>{run.hostname}</Text>
+    </View>
+  );
+}
+function RunningFooter({ run }: { run: Run }) {
+  return (
+    <View style={styles.runningFooter} fixed>
+      <Text style={styles.runningFooterText}>Generated by Pam · Run ID: {run.id}</Text>
+      <Text
+        style={styles.runningFooterText}
+        render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+      />
+    </View>
+  );
+}
+
+// ── CIP wordmark (page 1 only, replaces top whitespace) ─────────────────
+function CIPWordmark() {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+      <View style={{ width: 28, height: 28, backgroundColor: C.primary, borderRadius: 5, alignItems: "center", justifyContent: "center", marginRight: 10 }}>
+        <Text style={{ fontSize: 13, fontFamily: "Helvetica-Bold", color: "#fff", letterSpacing: 0.5 }}>CIP</Text>
+      </View>
+      <View>
+        <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.text, letterSpacing: 0.4 }}>Communications Intelligence Platform</Text>
+        <Text style={{ fontSize: 7, color: C.muted, letterSpacing: 0.6, marginTop: 1, textTransform: "uppercase" }}>Powered by Pam · Confidential</Text>
+      </View>
+    </View>
+  );
+}
+
+// ── Channel icons (inline SVG, monochrome) ──────────────────────────────
+// Used in the procurement callouts to give visual anchors.
+function ChannelIcon({ kind, color = C.text, size = 14 }: { kind: "envelope" | "phone" | "browser" | "shield" | "search" | "funnel" | "globe"; color?: string; size?: number }) {
+  const paths: Record<string, string> = {
+    envelope: "M2 5 H22 V19 H2 Z M2 5 L12 13 L22 5",
+    phone: "M6 3 H10 L11 8 L9 10 C10 13 11 14 14 15 L16 13 L21 14 V18 C21 19 20 21 18 21 C10 21 3 14 3 6 C3 4 5 3 6 3 Z",
+    browser: "M3 5 H21 V19 H3 Z M3 9 H21 M6 7 H8",
+    shield: "M12 2 L20 5 V12 C20 17 16 20 12 22 C8 20 4 17 4 12 V5 Z",
+    search: "M10 16 A6 6 0 1 1 16 10 A6 6 0 0 1 10 16 Z M14.5 14.5 L20 20",
+    funnel: "M3 4 H21 L14 13 V20 L10 18 V13 Z",
+    globe: "M12 2 A10 10 0 1 0 12 22 A10 10 0 1 0 12 2 M2 12 H22 M12 2 C8 7 8 17 12 22 M12 2 C16 7 16 17 12 22",
+  };
+  return (
+    <Svg viewBox="0 0 24 24" style={{ width: size, height: size }}>
+      <Path d={paths[kind]} stroke={color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
   );
 }
 
@@ -2062,72 +2208,92 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
       author="Communications Intelligence Platform"
       subject={`Communications intelligence report for ${run.url}`}
     >
-      {/* PAGE 1 — Title, score, Comms Risk Score + gauge, Procurement Impact, overall result */}
+      {/* PAGE 1 — Wordmark, title, score, Comms Risk Score + gauge, Procurement Impact, overall result */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
+        <CIPWordmark />
         <HeaderPill score={overallScore} />
         <Hero run={run} overallScore={overallScore} />
         <CommsRiskScoreBand run={run} />
         <ProcurementImpactBox run={run} />
         <OverallResult run={run} carina={carina} />
+        <RunningFooter run={run} />
       </Page>
 
       {/* PAGE 2 — Procurement callouts (Sender Auth, Voice Compliance, Checkout) */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <Text style={styles.sectionHead}>Procurement Risk Callouts</Text>
         <SenderAuthSummary run={run} />
         <VoiceChannelCompliance run={run} />
         <CheckoutPaymentStatus run={run} />
+        <RunningFooter run={run} />
       </Page>
 
       {/* PAGE 3 — Scannable summary: Channel Health, Exec Summary, Severity bar, Top 5, Risk counts */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <ExecutiveSummaryTable run={run} />
         <ChannelHealthSummary run={run} />
         <SeverityDistribution run={run} />
         <TopFindings run={run} />
         <RiskSummary run={run} />
+        <RunningFooter run={run} />
       </Page>
 
       {/* PAGE 4 — Remediation Plan (48h / 7d buckets) */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <RemediationPlanner run={run} />
+        <RunningFooter run={run} />
       </Page>
 
       {/* PAGE 5 — Longitudinal Tracking (before/after, drift, next scan placeholders) */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <LongitudinalSection />
+        <RunningFooter run={run} />
       </Page>
 
       {/* PAGE 6 — Vonage / CCaaS Readiness + AI-Agent Readiness Summary */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <VonageReadiness run={run} />
         <AIAgentReadinessSummary run={run} />
+        <RunningFooter run={run} />
       </Page>
 
       {/* PAGE 7 — Channel scores bar chart + Per-channel confidence */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <Text style={styles.sectionHead}>Channel scores</Text>
         <ChannelKpis run={run} />
         <ChannelConfidenceTable run={run} />
+        <RunningFooter run={run} />
       </Page>
 
       {/* PAGE 8+ — Channel findings */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <Text style={styles.sectionHead}>Channel findings</Text>
         {channels.slice(0, 4).map((ch) => (
           <ChannelSection key={ch} ch={ch} job={run.jobs[ch]} run={run} carina={carina} />
         ))}
+        <RunningFooter run={run} />
       </Page>
 
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <Text style={styles.sectionHead}>Channel findings (continued)</Text>
         {channels.slice(4).map((ch) => (
           <ChannelSection key={ch} ch={ch} job={run.jobs[ch]} run={run} carina={carina} />
         ))}
+        <RunningFooter run={run} />
       </Page>
 
       {/* Final page — Healthy, Operator notes, Next Steps, Summary, Audit, Op Review badge */}
       <Page size="A4" style={styles.page}>
+        <RunningHeader run={run} />
         <HealthyChannels run={run} />
         <OperatorNotes />
         <RecommendedNextSteps />
@@ -2135,6 +2301,7 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
         <AuditTrail run={run} carina={carina} />
         <OperatorReviewBadge />
         <Footer />
+        <RunningFooter run={run} />
       </Page>
     </Document>
   );
