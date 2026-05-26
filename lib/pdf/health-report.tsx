@@ -12,6 +12,7 @@ import {
   View,
   Svg,
   Circle,
+  Path,
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
@@ -1275,6 +1276,36 @@ function computeCommsRiskScore(run: Run): { score: number; tier: { label: string
   return { score, tier };
 }
 
+// Horizontal gauge bar with red / yellow / green zones and a position marker.
+function RiskMeterGauge({ score }: { score: number }) {
+  const clamped = Math.max(0, Math.min(100, score));
+  const width = 520; // px-equivalent within @react-pdf SVG viewBox
+  const height = 14;
+  const markerX = (clamped / 100) * width;
+  return (
+    <View style={{ marginTop: 4, marginBottom: 4 }}>
+      <Svg viewBox={`0 0 ${width} ${height + 12}`} style={{ width: "100%", height: 22 }}>
+        {/* Red zone: 0–60 */}
+        <Path d={`M 0 0 H ${0.6 * width} V ${height} H 0 Z`} fill={C.dangerSoft} stroke={C.dangerBorder} strokeWidth={0.5} />
+        {/* Yellow zone: 60–80 */}
+        <Path d={`M ${0.6 * width} 0 H ${0.8 * width} V ${height} H ${0.6 * width} Z`} fill={C.warnSoft} stroke={C.warnBorder} strokeWidth={0.5} />
+        {/* Green zone: 80–100 */}
+        <Path d={`M ${0.8 * width} 0 H ${width} V ${height} H ${0.8 * width} Z`} fill={C.okSoft} stroke={C.okBorder} strokeWidth={0.5} />
+        {/* Marker line */}
+        <Path d={`M ${markerX} -2 V ${height + 4}`} stroke={C.text} strokeWidth={2} />
+        {/* Marker dot */}
+        <Circle cx={markerX} cy={height + 8} r={3} fill={C.text} />
+      </Svg>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 2 }}>
+        <Text style={{ fontSize: 7, color: C.muted }}>0</Text>
+        <Text style={{ fontSize: 7, color: C.muted, marginLeft: width * 0.6 - 6 }}>60</Text>
+        <Text style={{ fontSize: 7, color: C.muted }}>80</Text>
+        <Text style={{ fontSize: 7, color: C.muted }}>100</Text>
+      </View>
+    </View>
+  );
+}
+
 function CommsRiskScoreBand({ run }: { run: Run }) {
   const { score, tier } = computeCommsRiskScore(run);
   return (
@@ -1296,15 +1327,334 @@ function CommsRiskScoreBand({ run }: { run: Run }) {
           <Text style={[styles.statusPillText, { color: tier.color }] as never}>{tier.label}</Text>
         </View>
       </View>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", marginBottom: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", marginBottom: 4 }}>
         <Text style={{ fontSize: 28, fontFamily: "Helvetica-Bold", color: C.text }}>{score}</Text>
         <Text style={{ fontSize: 12, color: C.muted, marginLeft: 4, marginBottom: 4 }}>/ 100</Text>
       </View>
-      <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted }] as never}>
+      <RiskMeterGauge score={score} />
+      <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted, marginTop: 4 }] as never}>
         Procurement-facing rollup of CCaaS (25%), UCaaS (25%), AI-Interaction (20%),
-        and Enterprise Compliance Alignment (30%). This is the single number to
-        forward inside an enterprise procurement review.
+        and Enterprise Compliance Alignment (30%).
       </Text>
+    </View>
+  );
+}
+
+// ── Procurement Impact one-liner (page 1) ───────────────────────────────
+function buildProcurementImpact(run: Run): string {
+  const deliv = run.jobs.deliverability.result?.findings ?? [];
+  const ivr = run.jobs.ivr.result?.findings ?? [];
+  const audit = run.jobs.audit.result?.findings ?? [];
+  const funnel = run.jobs.funnel.result?.findings ?? [];
+
+  const senderAuthBroken = deliv.some((f) => f.severity === "issue" && /SPF|DMARC|DKIM|MX/.test(f.label));
+  const disclosuresMissing = ivr.some((f) => f.severity === "issue" && /GDPR|disclosure|privacy/i.test(f.label));
+  const ccaasGap = audit.some((f) => f.severity === "issue") || funnel.some((f) => f.severity === "issue");
+
+  const parts: string[] = [];
+  if (senderAuthBroken) parts.push("sender-authentication gaps");
+  if (disclosuresMissing) parts.push("missing voice-channel disclosures");
+  if (ccaasGap) parts.push("CTA / routing-clarity issues");
+
+  if (parts.length === 0) {
+    return "No procurement-blocking findings detected. Surfaces appear compliant with standard CCaaS / UCaaS vendor-security review criteria.";
+  }
+  const list = parts.length === 1 ? parts[0] : parts.length === 2 ? `${parts[0]} and ${parts[1]}` : `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
+  return `${list[0].toUpperCase()}${list.slice(1)} may block this brand in enterprise RFPs and vendor-security reviews. Remediation is in-scope for the next 7-day cycle.`;
+}
+
+function ProcurementImpactBox({ run }: { run: Run }) {
+  return (
+    <View
+      style={{
+        marginBottom: 16,
+        padding: 12,
+        borderWidth: 1,
+        borderLeftWidth: 4,
+        borderColor: C.border,
+        borderLeftColor: C.primary,
+        borderRadius: 6,
+        backgroundColor: C.primarySoft,
+      }}
+    >
+      <Text style={[styles.sectionLabel, { color: C.primary, marginBottom: 4 }] as never}>
+        PROCUREMENT IMPACT
+      </Text>
+      <Text style={[styles.fieldValue, { color: C.text }] as never}>
+        {buildProcurementImpact(run)}
+      </Text>
+    </View>
+  );
+}
+
+// ── Executive Summary Table (4 pillars × score × risk × priority) ───────
+function pillarPriority(score: number): string {
+  if (score >= 80) return "P3";
+  if (score >= 60) return "P2";
+  return "P1";
+}
+function pillarRisk(score: number): { label: string; color: string } {
+  if (score >= 80) return { label: "Low", color: C.ok };
+  if (score >= 60) return { label: "Medium", color: C.warn };
+  return { label: "High", color: C.danger };
+}
+function ExecutiveSummaryTable({ run }: { run: Run }) {
+  const rows = [
+    { name: "CCaaS Readiness", score: readinessScore(run, ["ivr", "audit"]) },
+    { name: "UCaaS Readiness", score: readinessScore(run, ["deliverability", "email"]) },
+    { name: "AI-Interaction", score: readinessScore(run, ["browser", "social", "seo"]) },
+    { name: "Compliance Alignment", score: readinessScore(run, ["deliverability", "ivr"]) },
+  ];
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={styles.sectionHead}>Executive Summary</Text>
+      <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 6 }}>
+        {/* Header */}
+        <View style={{ flexDirection: "row", backgroundColor: C.bg, borderBottomWidth: 1, borderBottomColor: C.border, paddingHorizontal: 8, paddingVertical: 6 }}>
+          <Text style={{ flex: 3, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6 }}>PILLAR</Text>
+          <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>SCORE</Text>
+          <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>RISK</Text>
+          <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>PRIORITY</Text>
+        </View>
+        {rows.map((r, i) => {
+          const risk = pillarRisk(r.score);
+          return (
+            <View key={r.name} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+              <Text style={{ flex: 3, fontSize: 10, color: C.text }}>{r.name}</Text>
+              <Text style={{ flex: 1, fontSize: 11, fontFamily: "Helvetica-Bold", color: C.text, textAlign: "right" }}>{r.score}</Text>
+              <Text style={{ flex: 1, fontSize: 9, fontFamily: "Helvetica-Bold", color: risk.color, textAlign: "right" }}>{risk.label}</Text>
+              <Text style={{ flex: 1, fontSize: 9, fontFamily: "Helvetica-Bold", color: risk.color, textAlign: "right" }}>{pillarPriority(r.score)}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ── Top 5 Findings (procurement-blocking) ───────────────────────────────
+function collectTopFindings(run: Run, n: number): { channel: Channel; label: string; severity: Finding["severity"] }[] {
+  const all: { channel: Channel; label: string; severity: Finding["severity"]; order: number }[] = [];
+  for (const ch of channels) {
+    const fs = run.jobs[ch].result?.findings ?? [];
+    for (const f of fs) {
+      const order = f.severity === "issue" ? 0 : f.severity === "warn" ? 1 : 2;
+      all.push({ channel: ch, label: f.label, severity: f.severity, order });
+    }
+  }
+  all.sort((a, b) => a.order - b.order);
+  return all.filter((f) => f.severity !== "ok").slice(0, n).map(({ channel, label, severity }) => ({ channel, label, severity }));
+}
+function TopFindings({ run }: { run: Run }) {
+  const top = collectTopFindings(run, 5);
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={styles.sectionHead}>Top 5 Findings (Procurement-Blocking)</Text>
+      {top.length === 0 ? (
+        <Text style={[styles.fieldValue, { color: C.muted }] as never}>
+          No procurement-blocking findings detected.
+        </Text>
+      ) : (
+        <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 6 }}>
+          {top.map((f, i) => {
+            const tag = f.severity === "issue" ? { label: "P1", color: C.danger } : { label: "P2", color: C.warn };
+            return (
+              <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+                <Text style={{ width: 16, fontSize: 9, color: C.muted, fontFamily: "Helvetica-Bold" }}>{i + 1}.</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, color: C.text }}>{f.label}</Text>
+                  <Text style={{ fontSize: 7, color: C.muted, letterSpacing: 0.6, marginTop: 1 }}>{channelLabels[f.channel].toUpperCase()}</Text>
+                </View>
+                <View style={[styles.statusPill, { borderColor: tag.color, backgroundColor: "#fff", marginLeft: 4 }] as never}>
+                  <Text style={[styles.statusPillText, { color: tag.color }] as never}>{tag.label}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ── AI-Agent Readiness Summary callout ──────────────────────────────────
+function AIAgentReadinessSummary({ run }: { run: Run }) {
+  const seoFindings = run.jobs.seo.result?.findings ?? [];
+  const auditFindings = run.jobs.audit.result?.findings ?? [];
+  const funnelFindings = run.jobs.funnel.result?.findings ?? [];
+
+  const hasJsonLd = !seoFindings.some((f) => f.label === "No structured data (JSON-LD)" || /^No structured data/.test(f.label));
+  const ogIssue = seoFindings.find((f) => f.label === "Open Graph tags missing or incomplete");
+  const ogPresent = !ogIssue || /og:image: yes/.test(ogIssue.detail ?? "");
+  const twitterPresent = !seoFindings.some((f) => f.label === "No Twitter card meta");
+  const metaPresent = !seoFindings.some((f) => f.label === "No meta description");
+  const ctaPresent = !auditFindings.some((f) => f.label === "No obvious CTA detected");
+  const trustSignalLow = funnelFindings.some((f) => /Trust signals: [01] of 5 present/.test(f.label));
+
+  const signals = [
+    { name: "Structured metadata (JSON-LD)", ok: hasJsonLd },
+    { name: "Open Graph image / title", ok: ogPresent },
+    { name: "Twitter card meta", ok: twitterPresent },
+    { name: "Meta description", ok: metaPresent },
+    { name: "CTA discoverability", ok: ctaPresent },
+    { name: "Trust signals on landing surface", ok: !trustSignalLow },
+  ];
+  const failCount = signals.filter((s) => !s.ok).length;
+  const tier = failCount === 0
+    ? { label: "READY", color: C.ok }
+    : failCount <= 2
+    ? { label: "GAPS", color: C.warn }
+    : { label: "AT RISK", color: C.danger };
+
+  return (
+    <View
+      style={{
+        marginBottom: 14,
+        padding: 12,
+        borderWidth: 1,
+        borderLeftWidth: 4,
+        borderColor: C.border,
+        borderLeftColor: tier.color,
+        borderRadius: 6,
+        backgroundColor: "#fff",
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+        <Text style={[styles.sectionLabel, { color: tier.color, marginRight: 10 }] as never}>
+          AI-AGENT READINESS SUMMARY
+        </Text>
+        <View style={[styles.statusPill, { borderColor: tier.color, backgroundColor: "#fff" }] as never}>
+          <Text style={[styles.statusPillText, { color: tier.color }] as never}>{tier.label}</Text>
+        </View>
+      </View>
+      <Text style={[styles.fieldValue, { color: C.muted, marginBottom: 8 }] as never}>
+        Can LLMs and AI agents parse and represent the brand reliably?
+      </Text>
+      {signals.map((s, i) => (
+        <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 2 }}>
+          <Text style={{ width: 14, fontSize: 11, fontFamily: "Helvetica-Bold", color: s.ok ? C.ok : C.danger }}>
+            {s.ok ? "✓" : "✗"}
+          </Text>
+          <Text style={{ flex: 1, fontSize: 10, color: C.text }}>{s.name}</Text>
+          <Text style={{ fontSize: 9, color: s.ok ? C.ok : C.danger, fontFamily: "Helvetica-Bold" }}>
+            {s.ok ? "Present" : "Missing"}
+          </Text>
+        </View>
+      ))}
+      <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted, marginTop: 8, fontFamily: "Helvetica-Oblique" }] as never}>
+        Impact: When signals are missing, AI agents may misrepresent the brand or
+        fail to extract key information (pricing, contact paths, product names).
+      </Text>
+    </View>
+  );
+}
+
+// ── Healthy Channels (strengths) ────────────────────────────────────────
+function HealthyChannels({ run }: { run: Run }) {
+  const healthy = channels
+    .map((ch) => ({ ch, score: run.jobs[ch].result?.score }))
+    .filter((h): h is { ch: Channel; score: number } => typeof h.score === "number" && h.score >= 80)
+    .sort((a, b) => b.score - a.score);
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={styles.sectionHead}>What's Healthy</Text>
+      {healthy.length === 0 ? (
+        <Text style={[styles.fieldValue, { color: C.muted }] as never}>
+          No channels scored at or above 80. Focus the next cycle on lifting the
+          lowest-scoring channels into the healthy band.
+        </Text>
+      ) : (
+        <View style={{ borderWidth: 1, borderColor: C.okBorder, borderRadius: 6, backgroundColor: C.okSoft }}>
+          {healthy.map((h, i) => (
+            <View key={h.ch} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 7, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.okBorder }}>
+              <Text style={{ width: 14, fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ok }}>✓</Text>
+              <Text style={{ flex: 1, fontSize: 10, color: C.text }}>{channelLabels[h.ch]}</Text>
+              <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ok }}>{h.score}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ── Longitudinal: Before/After + Drift Detection + Next Scan ────────────
+function LongitudinalSection() {
+  return (
+    <View>
+      <Text style={styles.sectionHead}>Longitudinal Tracking</Text>
+      <Text style={[styles.fieldValue, { marginBottom: 12 }] as never}>
+        This scan establishes the baseline. The fields below populate after the
+        next re-scan of the same target.
+      </Text>
+
+      {/* Before/After delta — placeholder table */}
+      <View style={{ marginBottom: 12, padding: 10, borderWidth: 1, borderColor: C.border, borderRadius: 6, backgroundColor: C.bg }}>
+        <Text style={[styles.sectionLabel, { color: C.primary, marginBottom: 4 }] as never}>BEFORE / AFTER DELTA</Text>
+        <Text style={[styles.fieldValue, { color: C.muted, marginBottom: 8 }] as never}>
+          Baseline established — score deltas and resolved-finding counts appear after the next scan.
+        </Text>
+        <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 4, backgroundColor: "#fff" }}>
+          <View style={{ flexDirection: "row", backgroundColor: C.bg, borderBottomWidth: 1, borderBottomColor: C.border, paddingHorizontal: 8, paddingVertical: 5 }}>
+            <Text style={{ flex: 2, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6 }}>METRIC</Text>
+            <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>PREVIOUS</Text>
+            <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>CURRENT</Text>
+            <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.muted, letterSpacing: 0.6, textAlign: "right" }}>Δ</Text>
+          </View>
+          {["Overall score", "Critical findings", "Watch findings", "Healthy channels"].map((m, i) => (
+            <View key={m} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 5, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border }}>
+              <Text style={{ flex: 2, fontSize: 9.5, color: C.text }}>{m}</Text>
+              <Text style={{ flex: 1, fontSize: 9.5, color: C.muted, textAlign: "right" }}>—</Text>
+              <Text style={{ flex: 1, fontSize: 9.5, color: C.muted, textAlign: "right" }}>—</Text>
+              <Text style={{ flex: 1, fontSize: 9.5, color: C.muted, textAlign: "right" }}>0</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Drift Detection — placeholder */}
+      <View style={{ marginBottom: 12, padding: 10, borderWidth: 1, borderColor: C.border, borderRadius: 6, backgroundColor: C.bg }}>
+        <Text style={[styles.sectionLabel, { color: C.primary, marginBottom: 4 }] as never}>DRIFT DETECTION</Text>
+        <Text style={[styles.fieldValue, { color: C.muted }] as never}>
+          No previous scan — baseline established. Drift events (new errors,
+          removed trust signals, CTA changes, metadata drift, DNS changes,
+          IVR changes, social-profile changes) will appear here after the next scan.
+        </Text>
+      </View>
+
+      {/* Next Scan — honest CTA, not a fake date */}
+      <View style={{ marginBottom: 4, padding: 10, borderWidth: 1, borderColor: C.border, borderRadius: 6, backgroundColor: C.bg }}>
+        <Text style={[styles.sectionLabel, { color: C.primary, marginBottom: 4 }] as never}>NEXT SCAN</Text>
+        <Text style={[styles.fieldValue, { color: C.muted }] as never}>
+          Re-scans are available on demand from the CIP portal. Automated weekly
+          re-scans roll out with the drift-detection module — first delta report
+          fires after the second scan of the same target.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+// ── Operator Notes (honest scope) ───────────────────────────────────────
+function OperatorNotes() {
+  return (
+    <View style={{ marginBottom: 14, padding: 12, borderWidth: 1, borderColor: C.border, borderRadius: 6 }}>
+      <Text style={[styles.sectionLabel, { color: C.primary, marginBottom: 6 }] as never}>OPERATOR NOTES</Text>
+      <Text style={[styles.fieldValue, { color: C.muted, marginBottom: 8 }] as never}>
+        Findings derived solely from automated scan. Operator review extends
+        the scope; recommended pre-pitch checks include:
+      </Text>
+      {[
+        "TLS certificate expiry windows on all reachable comms surfaces",
+        "DNS propagation stability for sender-auth records",
+        "Unexpected redirect chains on primary marketing surfaces",
+        "Shadow subdomain risk surfaced by CT-log enumeration",
+      ].map((n, i) => (
+        <View key={i} style={styles.actionRow}>
+          <Text style={styles.actionDot}>•</Text>
+          <Text style={styles.actionText}>{n}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -1441,16 +1791,19 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
       author="Communications Intelligence Platform"
       subject={`Communications intelligence report for ${run.url}`}
     >
-      {/* PAGE 1 — Title, subtext, overall score, Enterprise Comms Risk band, overall result */}
+      {/* PAGE 1 — Title, score, Comms Risk Score + gauge, Procurement Impact, overall result */}
       <Page size="A4" style={styles.page}>
         <HeaderPill score={overallScore} />
         <Hero run={run} overallScore={overallScore} />
         <CommsRiskScoreBand run={run} />
+        <ProcurementImpactBox run={run} />
         <OverallResult run={run} carina={carina} />
       </Page>
 
-      {/* PAGE 2 — Risk Summary (critical/medium/low + before/after note) */}
+      {/* PAGE 2 — Executive view: Summary table, Top 5 findings, Risk Summary counts */}
       <Page size="A4" style={styles.page}>
+        <ExecutiveSummaryTable run={run} />
+        <TopFindings run={run} />
         <RiskSummary run={run} />
       </Page>
 
@@ -1459,18 +1812,24 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
         <RemediationPlanner run={run} />
       </Page>
 
-      {/* PAGE 4 — Vonage / CCaaS Readiness mapping */}
+      {/* PAGE 4 — Longitudinal Tracking (before/after, drift, next scan placeholders) */}
       <Page size="A4" style={styles.page}>
-        <VonageReadiness run={run} />
+        <LongitudinalSection />
       </Page>
 
-      {/* PAGE 4 — Channel scores table */}
+      {/* PAGE 5 — Vonage / CCaaS Readiness + AI-Agent Readiness Summary */}
+      <Page size="A4" style={styles.page}>
+        <VonageReadiness run={run} />
+        <AIAgentReadinessSummary run={run} />
+      </Page>
+
+      {/* PAGE 6 — Channel scores table */}
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel scores</Text>
         <ChannelKpis run={run} />
       </Page>
 
-      {/* PAGE 5+ — Channel findings */}
+      {/* PAGE 7+ — Channel findings */}
       <Page size="A4" style={styles.page}>
         <Text style={styles.sectionHead}>Channel findings</Text>
         {channels.slice(0, 4).map((ch) => (
@@ -1485,8 +1844,10 @@ function HealthReport({ run, carina }: { run: Run; carina?: CarinaRewrite }) {
         ))}
       </Page>
 
-      {/* Final page — Summary, Audit trail, Footer */}
+      {/* Final page — Healthy channels, Operator notes, Summary, Audit trail */}
       <Page size="A4" style={styles.page}>
+        <HealthyChannels run={run} />
+        <OperatorNotes />
         <Summary run={run} carina={carina} />
         <AuditTrail run={run} carina={carina} />
         <Footer />
