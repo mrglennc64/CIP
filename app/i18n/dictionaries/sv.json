@@ -6,7 +6,7 @@
   "nav.weeklyReport": "Veckorapport",
   "nav.signIn": "Logga in",
 
-  "footer.tagline": "Web Assessment Agency — strukturerade, repeterbara kontroller för webbplatser, SaaS-plattformar, medlemsplattformar och e-handel.",
+  "footer.tagline": "Northern Star · CIP — strukturerade, repeterbara kontroller för webbplatser, SaaS-plattformar, medlemsplattformar och e-handel.",
 
   "home.hero.h1": "Webbgranskning för tydliga, stabila och mätbara flöden",
   "home.hero.lead": "Vi analyserar webbplatser, checkout-flöden, onboarding, e-postsekvenser och veckobaserat innehåll. Fokus: stabilitet, tydlighet och mätbara förbättringar för SaaS-bolag, medlemsplattformar och e-handel.",
@@ -173,5 +173,5 @@
   "reportDetail.download": "Ladda ner PDF",
   "reportDetail.openDashboard": "Öppna Dashboard",
   "reportDetail.placeholder": "Detta är en platshållarpost. När automationen är igång skrivs veckorapporter hit automatiskt.",
-  "reportDetail.notFoundTitle": "Rapport saknas — Web Assessment Agency"
+  "reportDetail.notFoundTitle": "Rapport saknas — Northern Star · CIP"
 }

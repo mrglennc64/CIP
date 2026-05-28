@@ -104,7 +104,7 @@ export function ScanTeaserView({ run }: { run: Run }) {
             href="/"
             className="text-sm font-semibold tracking-tight text-text hover:text-wa-primary"
           >
-            Web Assessment Agency
+            Northern Star · CIP
           </Link>
           <span className="text-xs text-text-muted">
             {sv ? "Gratis skanning" : "Free scan"}

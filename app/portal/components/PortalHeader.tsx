@@ -15,7 +15,7 @@ export function PortalHeader({ tenant }: { tenant: Tenant }) {
             href="/"
             className="text-sm font-semibold tracking-tight text-text hover:text-wa-primary"
           >
-            Web Assessment Agency
+            Northern Star · CIP
           </Link>
           <span className="text-text-muted">/</span>
           <span className="flex items-center gap-2">

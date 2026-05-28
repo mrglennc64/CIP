@@ -21,7 +21,7 @@ export function UnavailableClient({
     <div className="flex min-h-screen items-center justify-center bg-bg px-6">
       <div className="max-w-md text-center">
         <p className="text-xs font-semibold uppercase tracking-wider text-wa-primary">
-          Web Assessment Agency
+          Northern Star · CIP
         </p>
         <h1 className="mt-4 text-2xl font-bold text-text">
           {sv ? titleSv : titleEn}

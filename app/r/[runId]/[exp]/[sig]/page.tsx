@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Health Report — Web Assessment Agency",
+  title: "Health Report — Northern Star · CIP",
   robots: { index: false, follow: false },
 };
 
@@ -174,7 +174,7 @@ export default async function CustomerDashboard({
             href="/"
             className="text-sm font-semibold tracking-tight text-text hover:text-wa-primary"
           >
-            Web Assessment Agency
+            Northern Star · CIP
           </Link>
           <span className="text-xs text-text-muted">
             Confidential — prepared for{" "}
@@ -269,7 +269,7 @@ export default async function CustomerDashboard({
             Link expires <span className="font-medium text-text">{expiresStr}</span>. For a fresh link, contact your account manager.
           </p>
           <p className="mt-3">
-            Web Assessment Agency · webassessment.agency
+            Northern Star Systems · cip.usesmpt.com
           </p>
         </footer>
       </main>
@@ -366,7 +366,7 @@ function Unavailable({
     <div className="flex min-h-screen items-center justify-center bg-bg px-6">
       <div className="max-w-md text-center">
         <p className="text-xs font-semibold uppercase tracking-wider text-wa-primary">
-          Web Assessment Agency
+          Northern Star · CIP
         </p>
         <h1 className="mt-4 text-2xl font-bold text-text">{title}</h1>
         <p className="mt-3 text-sm text-text-muted">{body}</p>

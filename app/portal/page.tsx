@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PortalView } from "./PortalView";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Web Assessment Agency",
+  title: "Dashboard — Northern Star · CIP",
 };
 
 export default function PortalPage() {

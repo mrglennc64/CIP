@@ -6,7 +6,7 @@
   "nav.weeklyReport": "Weekly Report",
   "nav.signIn": "Sign in",
 
-  "footer.tagline": "Web Assessment Agency — structured, repeatable checks for websites and SaaS platforms.",
+  "footer.tagline": "Northern Star · CIP — structured, repeatable checks for websites and SaaS platforms.",
 
   "home.hero.h1": "Web Assessment for Clear, Stable and High-Performing Websites",
   "home.hero.lead": "We analyze websites, payment flows, email automations and weekly content. Focus: stability, clarity, and measurable improvements.",
@@ -173,5 +173,5 @@
   "reportDetail.download": "Download PDF",
   "reportDetail.openDashboard": "Open Dashboard",
   "reportDetail.placeholder": "This is a placeholder report record. Once the automation is wired up, weekly reports will be written here automatically.",
-  "reportDetail.notFoundTitle": "Report not found — Web Assessment Agency"
+  "reportDetail.notFoundTitle": "Report not found — Northern Star · CIP"
 }

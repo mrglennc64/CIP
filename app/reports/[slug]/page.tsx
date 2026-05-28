@@ -16,9 +16,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const report = weeklyReports.find((r) => r.slug === slug);
-  if (!report) return { title: "Report not found — Web Assessment Agency" };
+  if (!report) return { title: "Report not found — Northern Star · CIP" };
   return {
-    title: `${report.title} — Web Assessment Agency`,
+    title: `${report.title} — Northern Star · CIP`,
     description: report.summary,
   };
 }

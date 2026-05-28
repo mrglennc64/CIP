@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PricingView } from "./PricingView";
 
 export const metadata: Metadata = {
-  title: "Pricing — Web Assessment Agency",
+  title: "Pricing — Northern Star · CIP",
   description:
     "Three monthly tiers priced in SEK — Starter, Standard, and Professional.",
 };

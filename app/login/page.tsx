@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Sign in — Web Assessment Agency",
+  title: "Sign in — Northern Star · CIP",
 };
 
 export default function LoginPage() {
@@ -14,7 +14,7 @@ export default function LoginPage() {
             href="/"
             className="inline-block text-sm font-semibold tracking-tight text-text hover:text-wa-primary"
           >
-            Web Assessment Agency
+            Northern Star · CIP
           </Link>
         </div>
 

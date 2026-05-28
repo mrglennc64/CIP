@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Free scan — Web Assessment Agency",
+  title: "Free scan — Northern Star · CIP",
   robots: { index: false, follow: false },
 };
 
