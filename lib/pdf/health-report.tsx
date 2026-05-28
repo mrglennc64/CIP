@@ -13,13 +13,14 @@ import {
   Svg,
   Circle,
   Path,
+  Font,
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
 
-// Note: Inter font registration was attempted but @fontsource/inter ships
-// woff2 only (no TTF), and the Google Fonts CDN TTF URLs change frequently.
-// Sticking with built-in Helvetica for stability. Future: bundle Inter TTFs.
+// Disable @react-pdf's default hyphenation so words like "drift-detection"
+// or "rawhemp.se" don't get split mid-word at line breaks.
+Font.registerHyphenationCallback((word) => [word]);
 import {
   channels,
   type Channel,
@@ -39,7 +40,7 @@ const channelLabels: Record<Channel, string> = {
   social: "Social Presence",
   browser: "Synthetic Comms Check",
   inventory: "Comms Surfaces Inventory",
-  ivr: "IVR Audit (Sample Data — production version scans your prospect's actual IVR)",
+  ivr: "IVR Audit (Sample)",
 };
 
 // ── Tokens ──────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 9, fontFamily: "Helvetica-Bold" },
 
-  h1: { fontSize: 26, fontFamily: "Helvetica-Bold", color: C.text, marginBottom: 8, letterSpacing: -0.2 },
+  h1: { fontSize: 22, fontFamily: "Helvetica-Bold", color: C.text, marginBottom: 4, letterSpacing: -0.2 },
   sub: { fontSize: 10.5, color: C.muted, lineHeight: 1.55 },
 
   hero: {
@@ -925,11 +926,12 @@ function Hero({ run, overallScore }: { run: Run; overallScore: number }) {
   return (
     <View style={styles.hero}>
       <View style={styles.heroLeft}>
-        <Text style={styles.h1}>{run.hostname} — Communications Intelligence Report</Text>
-        <Text style={styles.sub}>
+        <Text style={styles.h1}>Communications Intelligence Report</Text>
+        <Text style={[styles.sub, { fontSize: 11, marginTop: 4 }] as never}>{run.hostname}</Text>
+        <Text style={[styles.sub, { marginTop: 8 }] as never}>
           {date} · {completed.length} channels analyzed · {issues} critical · {warns} watch · {oks} pass
         </Text>
-        <Text style={[styles.sub, { marginTop: 8 }] as never}>
+        <Text style={[styles.sub, { marginTop: 4 }] as never}>
           Run ID: {run.id}
         </Text>
       </View>
@@ -1502,7 +1504,7 @@ function collectTopFindings(run: Run, n: number): { channel: Channel; label: str
 function TopFindings({ run }: { run: Run }) {
   const top = collectTopFindings(run, 5);
   return (
-    <View style={{ marginBottom: 14 }}>
+    <View style={{ marginBottom: 14 }} wrap={false}>
       <Text style={styles.sectionHead}>Top 5 Findings (Procurement-Blocking)</Text>
       {top.length === 0 ? (
         <Text style={[styles.fieldValue, { color: C.muted }] as never}>
@@ -1513,7 +1515,7 @@ function TopFindings({ run }: { run: Run }) {
           {top.map((f, i) => {
             const tag = f.severity === "issue" ? { label: "P1", color: C.danger } : { label: "P2", color: C.warn };
             return (
-              <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border, backgroundColor: i % 2 === 1 ? C.bg : "#fff" }}>
+              <View key={i} wrap={false} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 9, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.border, backgroundColor: i % 2 === 1 ? C.bg : "#fff" }}>
                 <Text style={{ width: 16, fontSize: 9, color: C.muted, fontFamily: "Helvetica-Bold" }}>{i + 1}.</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 10, color: C.text }}>{f.label}</Text>
