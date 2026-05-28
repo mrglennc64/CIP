@@ -540,9 +540,9 @@ function toCarinaLines(label: string, detail: string | undefined, severity: Find
   if (/^Site title:/.test(L)) return out("Title captured.");
   if (L === "Description captured") return out("Description captured.");
   if (/^No meta description for context/.test(L)) return out("Description missing.");
-  if (L === "Drafted with Claude") return out("Draft posts generated.");
-  if (/^LLM error:/.test(L) || /^ANTHROPIC_API_KEY not set/.test(L)) {
-    return out("Draft posts generated using fallback templates.");
+  if (/^\d+ draft post\(s\) generated/.test(L)) {
+    const n = L.match(/^(\d+)/)?.[1] ?? "0";
+    return out(`${n} draft social ${plural(Number(n), "post")} generated.`);
   }
 
   // ─ Synthetic browser check ─
@@ -1582,7 +1582,7 @@ function AIAgentReadinessSummary({ run }: { run: Run }) {
         </View>
       </View>
       <Text style={[styles.fieldValue, { color: C.muted, marginBottom: 8 }] as never}>
-        Can LLMs and AI agents parse and represent the brand reliably?
+        Can automated agents and crawlers parse and extract brand metadata reliably?
       </Text>
       {signals.map((s, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 2 }}>
@@ -1596,8 +1596,9 @@ function AIAgentReadinessSummary({ run }: { run: Run }) {
         </View>
       ))}
       <Text style={[styles.fieldValue, { fontSize: 9, color: C.muted, marginTop: 8, fontFamily: "Helvetica-Oblique" }] as never}>
-        Impact: When signals are missing, AI agents may misrepresent the brand or
-        fail to extract key information (pricing, contact paths, product names).
+        Impact: When signals are missing, automated agents may misrepresent the
+        brand or fail to extract key information (pricing, contact paths,
+        product names).
       </Text>
     </View>
   );

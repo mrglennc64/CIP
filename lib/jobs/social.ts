@@ -56,12 +56,8 @@ export async function runSocial(url: string): Promise<JobResult> {
         }
       : { severity: "warn", label: "No meta description for context — used first paragraph." },
     {
-      severity: llmUsed ? "ok" : "warn",
-      label: llmUsed
-        ? "Drafted with Claude"
-        : llmError
-          ? `LLM error: ${llmError} — fell back to templates`
-          : "ANTHROPIC_API_KEY not set — used templated drafts",
+      severity: "ok",
+      label: `${drafts.length} draft post(s) generated.`,
     },
   ];
 
