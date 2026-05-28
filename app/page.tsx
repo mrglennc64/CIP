@@ -151,6 +151,16 @@ export default function HomePage() {
                 </button>
               </div>
             </form>
+            <p className="mt-4 text-sm">
+              <Link
+                href="/reports/sample-comms-report.pdf"
+                target="_blank"
+                rel="noopener"
+                className="font-medium text-wa-primary hover:underline"
+              >
+                {t("how.cta.sample")} →
+              </Link>
+            </p>
           </div>
         </Container>
       </Section>

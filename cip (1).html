@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIP — Communications Intelligence Platform | Northern Star Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF;
+  --bg-soft:#F7FAF9;
+  --bg-tint:#EFF6F3;      /* light mint wash */
+  --ink:#0B0E14;          /* near-black headlines */
+  --body:#1A1F2A;
+  --muted:#6B7280;
+  --muted-2:#9CA3AF;
+  --line:#E5E9EE;
+  --line-2:#D6DEE4;
+  --sage:#7DAE9F;         /* primary accent (VerseIQ green) */
+  --sage-dark:#5F9486;
+  --sage-deep:#3F7468;
+  --sage-soft:#E6F0EC;
+  --p1:#B84C45;
+  --p1-bg:#FAEDEB;
+  --p2:#B58435;
+  --p2-bg:#FAF1DF;
+  --p3:#3F7468;
+  --p3-bg:#E6F0EC;
+  --maxw:1240px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--body);
+  font-family:'Inter',sans-serif;
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
+
+.eyebrow{
+  display:inline-block;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--sage-deep);
+  padding:7px 14px;
+  border:1px solid var(--sage);
+  border-radius:999px;
+  background:var(--bg);
+}
+section{position:relative}
+
+/* ===== HEADER ===== */
+header{position:sticky;top:0;z-index:80;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav{display:flex;align-items:center;justify-content:space-between;height:72px;max-width:var(--maxw);margin:0 auto;padding:0 32px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700;color:var(--ink)}
+.brand svg.logo{width:30px;height:30px;flex:0 0 auto;display:block}
+.brand .name{font-size:18px;letter-spacing:-.015em;display:flex;align-items:baseline;gap:6px;font-weight:700}
+.brand .name b{font-weight:800;color:var(--ink)}
+.brand .name i{font-weight:600;color:var(--sage);font-style:normal}
+.brand .div{width:1px;height:22px;background:var(--line-2);margin:0 8px}
+.brand .prod{font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;font-weight:600}
+.nav-links{display:flex;gap:34px;align-items:center}
+.nav-links a{font-size:14px;color:var(--body);font-weight:500}
+.nav-links a:hover{color:var(--sage-deep)}
+.nav-cta{
+  font-size:13.5px;font-weight:500;
+  padding:10px 20px;
+  background:var(--bg);color:var(--sage-deep);
+  border:1px solid var(--sage);
+  border-radius:999px;
+  transition:.15s;
+}
+.nav-cta:hover{background:var(--sage-soft)}
+@media(max-width:920px){.nav-links{display:none}}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:14.5px;font-weight:500;
+  padding:15px 28px;
+  border-radius:999px;
+  cursor:pointer;transition:.18s;
+  border:1px solid transparent;
+}
+.btn-primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn-primary:hover{background:#000}
+.btn-ghost{background:var(--bg);color:var(--ink);border-color:var(--line-2)}
+.btn-ghost:hover{border-color:var(--ink)}
+.btn-sage{background:var(--sage);color:#fff;border-color:var(--sage)}
+.btn-sage:hover{background:var(--sage-dark);border-color:var(--sage-dark)}
+.btn .arr{transition:transform .16s}
+.btn:hover .arr{transform:translateX(4px)}
+
+/* ===== HERO ===== */
+.hero{padding:80px 0 100px;position:relative;overflow:hidden;background:var(--bg)}
+.hero::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:65%;
+  background:linear-gradient(180deg,transparent 0%,var(--bg-tint) 100%);
+  z-index:0;pointer-events:none;
+}
+.hero .wrap{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:start}
+.hero h1{
+  font-size:clamp(42px,5.6vw,76px);
+  line-height:1.04;font-weight:800;letter-spacing:-.03em;
+  margin:28px 0 0;color:var(--ink);
+}
+.hero h1 .accent{color:var(--sage)}
+.hero p.lead{font-size:17.5px;color:var(--muted);max-width:560px;margin:28px 0 36px;line-height:1.6}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+.hero-meta{margin-top:60px;display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.hero-meta .m b{display:block;font-size:36px;color:var(--sage);font-weight:800;letter-spacing:-.025em;line-height:1}
+.hero-meta .m span{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:10px;display:block}
+
+/* ===== SCAN CARD (VerseIQ-style) ===== */
+.scan-card{
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:30px;
+  box-shadow:0 30px 70px -30px rgba(15,30,40,.12);
+}
+.scan-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.scan-head .lbl{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.scan-status{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--sage-deep);font-weight:500}
+.scan-status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 0 rgba(125,174,159,.7);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(125,174,159,.6)}70%{box-shadow:0 0 0 10px rgba(125,174,159,0)}100%{box-shadow:0 0 0 0 rgba(125,174,159,0)}}
+.scan-card h3{font-size:22px;font-weight:700;color:var(--ink);margin-bottom:20px;letter-spacing:-.02em}
+.scan-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 18px;margin-bottom:8px;
+  border:1px solid var(--line);border-left-width:3px;border-radius:12px;
+  background:var(--bg);
+}
+.scan-row.ok{border-left-color:var(--p3)}
+.scan-row.warn{border-left-color:var(--p2)}
+.scan-row.err{border-left-color:var(--p1)}
+.scan-row .name{font-size:14.5px;color:var(--ink);font-weight:500}
+.badge{font-size:11px;font-weight:600;padding:5px 11px;border-radius:999px;letter-spacing:.02em}
+.badge.ok{background:var(--p3-bg);color:var(--p3)}
+.badge.warn{background:var(--p2-bg);color:var(--p2)}
+.badge.err{background:var(--p1-bg);color:var(--p1)}
+.scan-note{
+  margin-top:18px;padding:18px;
+  background:var(--sage-soft);border-radius:14px;
+}
+.scan-note .nh{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;color:var(--sage-deep);text-transform:uppercase;font-weight:600;margin-bottom:8px}
+.scan-note .nb{font-size:13.5px;color:var(--ink);line-height:1.55}
+
+@media(max-width:980px){
+  .hero .wrap{grid-template-columns:1fr;gap:48px}
+  .hero-meta{grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+}
+
+/* ===== STRIP ===== */
+.strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:28px 0;background:var(--bg-soft)}
+.strip .wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center}
+.strip .lbl{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;margin-right:8px}
+.strip .tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);letter-spacing:.05em;border:1px solid var(--line-2);padding:7px 14px;border-radius:999px;background:var(--bg)}
+
+/* ===== BLOCK ===== */
+.block{padding:120px 0;background:var(--bg)}
+.block.alt{background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.block.tint{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-tint) 100%);border-top:1px solid var(--line)}
+.block h2{
+  font-size:clamp(34px,4.2vw,56px);
+  font-weight:800;letter-spacing:-.025em;line-height:1.05;
+  max-width:880px;color:var(--ink);margin-top:24px;
+}
+.block h2 .accent{color:var(--sage)}
+.block .sub{color:var(--muted);max-width:680px;margin-top:22px;font-size:17px;line-height:1.65}
+
+/* ===== CARDS3 ===== */
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:64px}
+.card{
+  background:var(--bg);border:1px solid var(--line);border-radius:20px;
+  padding:36px 30px;transition:.2s;
+}
+.card:hover{transform:translateY(-3px);box-shadow:0 24px 60px -30px rgba(15,30,40,.15);border-color:var(--sage)}
+.card .num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--sage-deep);letter-spacing:.18em;font-weight:600}
+.card h3{font-size:22px;font-weight:700;margin:18px 0 12px;letter-spacing:-.015em;color:var(--ink);line-height:1.2}
+.card .desc{font-size:14.5px;color:var(--muted);margin-bottom:22px;line-height:1.6}
+.card ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.card li{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--ink);display:flex;gap:10px;align-items:baseline}
+.card li::before{content:"+";color:var(--sage);font-weight:700}
+@media(max-width:880px){.cards3{grid-template-columns:1fr}}
+
+/* ===== WHY ===== */
+.why .wrap{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stat{
+  background:var(--bg);border:1px solid var(--line);border-radius:18px;
+  padding:30px;
+}
+.stat b{font-size:42px;color:var(--sage);display:block;font-weight:800;letter-spacing:-.025em;line-height:1}
+.stat span{font-size:13.5px;color:var(--muted);margin-top:10px;display:block;line-height:1.45}
+@media(max-width:880px){.why .wrap{grid-template-columns:1fr;gap:48px}}
+
+/* ===== WHO ===== */
+.who-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:60px}
+.who{
+  background:var(--bg);border:1px solid var(--line);border-radius:18px;
+  padding:28px 22px;transition:.2s;
+}
+.who:hover{border-color:var(--sage);background:var(--sage-soft)}
+.who .ic{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--sage-deep);letter-spacing:.14em;font-weight:600}
+.who h4{font-size:16px;font-weight:700;margin-top:16px;line-height:1.3;letter-spacing:-.01em;color:var(--ink)}
+@media(max-width:980px){.who-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.who-grid{grid-template-columns:1fr}}
+
+/* ===== PILLARS ===== */
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:60px}
+.pillar{
+  background:var(--bg);border:1px solid var(--line);border-radius:20px;
+  padding:32px 26px;transition:.2s;position:relative;overflow:hidden;
+}
+.pillar:hover{border-color:var(--sage)}
+.pillar .tag{
+  display:inline-block;font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;letter-spacing:.14em;color:var(--sage-deep);
+  background:var(--sage-soft);padding:5px 11px;border-radius:999px;font-weight:600;
+}
+.pillar h4{font-size:19px;font-weight:700;margin:16px 0 10px;letter-spacing:-.01em;color:var(--ink)}
+.pillar p{font-size:14px;color:var(--muted);line-height:1.6}
+@media(max-width:980px){.pillars{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.pillars{grid-template-columns:1fr}}
+
+/* ===== STEPS ===== */
+.steps{margin-top:60px;display:flex;flex-direction:column;gap:14px}
+.step{
+  display:grid;grid-template-columns:80px 1fr 1.4fr;gap:32px;
+  padding:28px 32px;border:1px solid var(--line);border-radius:20px;background:var(--bg);
+  align-items:center;transition:.2s;
+}
+.step:hover{border-color:var(--sage);background:var(--bg-soft)}
+.step .sn{
+  font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;
+  color:var(--sage-deep);letter-spacing:.1em;
+  background:var(--sage-soft);width:54px;height:54px;border-radius:50%;
+  display:grid;place-items:center;
+}
+.step h4{font-size:19px;font-weight:700;letter-spacing:-.015em;color:var(--ink)}
+.step p{font-size:14.5px;color:var(--muted);line-height:1.6}
+@media(max-width:760px){.step{grid-template-columns:54px 1fr;gap:18px}.step p{grid-column:1/-1;padding-left:72px}}
+
+/* ===== SAMPLE REPORT ===== */
+.report-card{
+  margin-top:60px;background:var(--bg);
+  border:1px solid var(--line);border-radius:24px;overflow:hidden;
+  box-shadow:0 30px 70px -30px rgba(15,30,40,.1);
+}
+.report-head{display:flex;justify-content:space-between;align-items:center;padding:24px 32px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:14px;background:var(--bg-soft)}
+.report-head .t{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.04em;color:var(--muted)}
+.report-head .t b{color:var(--ink);font-weight:600}
+.report-head .score{display:flex;align-items:center;gap:16px}
+.report-head .score .ring{width:64px;height:64px;border-radius:50%;background:conic-gradient(var(--sage) 0 72%,var(--line) 72% 100%);display:grid;place-items:center}
+.report-head .score .ring i{width:50px;height:50px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-weight:800;font-size:18px;font-style:normal;color:var(--ink)}
+.report-rows{display:grid;grid-template-columns:repeat(2,1fr)}
+.rrow{padding:20px 32px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px}
+.rrow:nth-child(even){border-right:0}
+.rrow:nth-last-child(-n+2){border-bottom:0}
+.rrow .name{font-size:14.5px;color:var(--ink);font-weight:500}
+.rrow .bar{flex:1;height:6px;background:var(--line);max-width:130px;position:relative;border-radius:999px;overflow:hidden}
+.rrow .bar i{position:absolute;left:0;top:0;bottom:0;display:block;border-radius:999px}
+.rrow .pct{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);width:38px;text-align:right;font-weight:600}
+.findings{padding:26px 32px;border-top:1px solid var(--line);background:var(--bg-soft)}
+.findings .fh{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;color:var(--muted);margin-bottom:18px;text-transform:uppercase;font-weight:600}
+.finding{display:grid;grid-template-columns:52px 1fr auto;gap:18px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center}
+.finding:last-child{border-bottom:0}
+.pbadge{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;padding:5px 9px;text-align:center;letter-spacing:.06em;border-radius:6px}
+.p1{background:var(--p1-bg);color:var(--p1)}
+.p2{background:var(--p2-bg);color:var(--p2)}
+.p3{background:var(--p3-bg);color:var(--p3)}
+.finding .fdesc{font-size:14px;color:var(--ink)}
+.finding .fchan{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);letter-spacing:.06em;font-weight:500}
+@media(max-width:760px){.report-rows{grid-template-columns:1fr}.rrow{border-right:0}.rrow:nth-last-child(-n+2){border-bottom:1px solid var(--line)}.rrow:last-child{border-bottom:0}}
+
+/* ===== OUTPUTS ===== */
+.outputs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:60px}
+.output{
+  background:var(--bg);border:1px solid var(--line);border-radius:14px;
+  padding:22px 24px;font-size:14px;color:var(--ink);font-weight:500;
+  display:flex;gap:14px;align-items:center;transition:.15s;
+}
+.output:hover{border-color:var(--sage);background:var(--sage-soft)}
+.output::before{content:"";width:8px;height:8px;background:var(--sage);flex:0 0 auto;border-radius:50%}
+@media(max-width:760px){.outputs{grid-template-columns:1fr}}
+
+/* ===== CTA ===== */
+.cta{
+  padding:130px 0;text-align:center;
+  background:linear-gradient(180deg,var(--bg-tint) 0%,var(--sage-soft) 100%);
+  border-top:1px solid var(--line);
+  position:relative;overflow:hidden;
+}
+.cta .wrap{position:relative;z-index:2}
+.cta h2{font-size:clamp(36px,4.6vw,60px);font-weight:800;letter-spacing:-.025em;max-width:780px;margin:22px auto 0;line-height:1.05;color:var(--ink)}
+.cta h2 .accent{color:var(--sage)}
+.cta p{color:var(--muted);max-width:560px;margin:24px auto 38px;font-size:17px}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+/* ===== FOOTER ===== */
+footer{padding:70px 0 36px;background:var(--bg);border-top:1px solid var(--line)}
+footer .wrap{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px}
+footer .fbrand p{font-size:13.5px;color:var(--muted);margin-top:18px;max-width:300px;line-height:1.65}
+footer h5{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-bottom:18px;font-weight:600}
+footer ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+footer li a{font-size:14px;color:var(--body);transition:color .15s}
+footer li a:hover{color:var(--sage-deep)}
+.fbottom{max-width:var(--maxw);margin:54px auto 0;padding:24px 32px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.06em}
+@media(max-width:760px){footer .wrap{grid-template-columns:1fr 1fr}}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <nav>
+    <a class="brand" href="#top">
+      <svg class="logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Northern Star: 4-point compass star -->
+        <path d="M20 2 L22.5 17.5 L38 20 L22.5 22.5 L20 38 L17.5 22.5 L2 20 L17.5 17.5 Z" fill="#0B0E14"/>
+        <path d="M20 9 L21.3 18.7 L31 20 L21.3 21.3 L20 31 L18.7 21.3 L9 20 L18.7 18.7 Z" fill="#7DAE9F"/>
+        <circle cx="20" cy="20" r="1.6" fill="#0B0E14"/>
+      </svg>
+      <span class="name"><b>Northern&nbsp;Star</b> <i>Systems</i></span>
+      <span class="div"></span>
+      <span class="prod">CIP</span>
+    </a>
+    <div class="nav-links">
+      <a href="#what">Platform</a>
+      <a href="#pillars">Pillars</a>
+      <a href="#how">How It Works</a>
+      <a href="#report">Sample Report</a>
+      <a href="#who">Who Uses It</a>
+    </div>
+    <a href="#cta" class="nav-cta">Run Enterprise Scan</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Communications Intelligence Platform</span>
+      <h1>Your Comms Surface Has <span class="accent">Hidden Risk</span> — We'll Show You Where.</h1>
+      <p class="lead">A multi-channel diagnostic system for enterprise communications surfaces — web, email, IVR, metadata, AI-readiness, and compliance posture — built for procurement and vendor-security workflows.</p>
+      <div class="hero-actions">
+        <a href="#cta" class="btn btn-primary">Run Enterprise Scan <span class="arr">→</span></a>
+        <a href="#report" class="btn btn-ghost">View Sample Report</a>
+      </div>
+      <div class="hero-meta">
+        <div class="m"><b>9</b><span>Diagnostic Channels</span></div>
+        <div class="m"><b>&lt;5min</b><span>Enterprise Scan</span></div>
+        <div class="m"><b>100%</b><span>Surface Coverage</span></div>
+      </div>
+    </div>
+
+    <!-- SCAN CARD -->
+    <div class="scan-card">
+      <div class="scan-head">
+        <span class="lbl">Comms Surface Scan</span>
+        <span class="scan-status">Scanning</span>
+      </div>
+      <h3>acme-comms.example</h3>
+
+      <div class="scan-row ok">
+        <span class="name">SPF / DKIM</span>
+        <span class="badge ok">Verified</span>
+      </div>
+      <div class="scan-row warn">
+        <span class="name">DMARC Enforcement</span>
+        <span class="badge warn">p=none</span>
+      </div>
+      <div class="scan-row err">
+        <span class="name">MTA-STS Policy</span>
+        <span class="badge err">Missing</span>
+      </div>
+      <div class="scan-row warn">
+        <span class="name">JSON-LD Coverage</span>
+        <span class="badge warn">3 / 7 Types</span>
+      </div>
+      <div class="scan-row ok">
+        <span class="name">IVR Disclosure</span>
+        <span class="badge ok">Present</span>
+      </div>
+
+      <div class="scan-note">
+        <div class="nh">Procurement Risk Detected</div>
+        <div class="nb">Two P1/P2 findings would block vendor-security review. Transport security cannot be enforced without MTA-STS, and DMARC <span class="mono">p=none</span> permits spoofing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STRIP -->
+<div class="strip">
+  <div class="wrap">
+    <span class="lbl">Surface Coverage</span>
+    <span class="tag">Web</span>
+    <span class="tag">Email / Sender-Auth</span>
+    <span class="tag">IVR</span>
+    <span class="tag">Metadata</span>
+    <span class="tag">AI-Interaction</span>
+    <span class="tag">Compliance</span>
+  </div>
+</div>
+
+<!-- WHAT CIP DOES -->
+<section class="block" id="what">
+  <div class="wrap reveal">
+    <span class="eyebrow">01 — What CIP Does</span>
+    <h2>A unified diagnostic layer across <span class="accent">every</span> communications surface.</h2>
+    <p class="sub">Deterministic, repeatable analysis that surfaces procurement-blocking risk, AI-readiness gaps, and compliance failures across all channels.</p>
+
+    <div class="cards3">
+      <div class="card">
+        <span class="num">/ 01</span>
+        <h3>Comms Surface Security</h3>
+        <p class="desc">Deterministic checks across sender-authentication and transport layers.</p>
+        <ul>
+          <li>SPF / DKIM / DMARC</li>
+          <li>MTA-STS + TLSRPT</li>
+          <li>MX posture</li>
+          <li>TLS reachability</li>
+          <li>Policy-file validation</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="num">/ 02</span>
+        <h3>AI-Agent Readiness</h3>
+        <p class="desc">Ensures LLMs can parse and represent the brand reliably.</p>
+        <ul>
+          <li>JSON-LD</li>
+          <li>Open Graph</li>
+          <li>Twitter card metadata</li>
+          <li>CTA discoverability</li>
+          <li>Trust-signal completeness</li>
+          <li>Metadata drift detection</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="num">/ 03</span>
+        <h3>Enterprise Compliance Alignment</h3>
+        <p class="desc">Cross-channel compliance posture for procurement and vendor-security reviews.</p>
+        <ul>
+          <li>GDPR / recording disclosures</li>
+          <li>IVR compliance</li>
+          <li>Metadata integrity</li>
+          <li>Robots / sitemap accessibility</li>
+          <li>Structured-data completeness</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="block alt why" id="why">
+  <div class="wrap reveal">
+    <div>
+      <span class="eyebrow">02 — Why CIP Exists</span>
+      <h2>Enterprise comms fail when surfaces <span class="accent">drift</span> out of alignment.</h2>
+      <p class="sub">Metadata, sender-auth, and communications surfaces drift independently over time. CIP provides a unified diagnostic layer that identifies procurement-blocking risks, AI-readiness gaps, and compliance failures across all channels — before they reach a vendor-security review.</p>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><b>9</b><span>Channels diagnosed per scan</span></div>
+      <div class="stat"><b>P1/P2/P3</b><span>Fix-priority classification</span></div>
+      <div class="stat"><b>0</b><span>Marketing heuristics — deterministic only</span></div>
+      <div class="stat"><b>1</b><span>Procurement readiness score</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO -->
+<section class="block" id="who">
+  <div class="wrap reveal">
+    <span class="eyebrow">03 — Who Uses CIP</span>
+    <h2>Built for teams that <span class="accent">evaluate</span> communications infrastructure.</h2>
+    <div class="who-grid">
+      <div class="who"><span class="ic">[ 01 ]</span><h4>CCaaS / UCaaS Providers</h4></div>
+      <div class="who"><span class="ic">[ 02 ]</span><h4>Enterprise Comms Teams</h4></div>
+      <div class="who"><span class="ic">[ 03 ]</span><h4>Vendor-Security Teams</h4></div>
+      <div class="who"><span class="ic">[ 04 ]</span><h4>AI-Integration Teams</h4></div>
+      <div class="who"><span class="ic">[ 05 ]</span><h4>Compliance & Procurement</h4></div>
+    </div>
+  </div>
+</section>
+
+<!-- PILLARS -->
+<section class="block alt" id="pillars">
+  <div class="wrap reveal">
+    <span class="eyebrow">04 — Core Pillars</span>
+    <h2>Four readiness pillars, aggregated into <span class="accent">one</span> score.</h2>
+    <div class="pillars">
+      <div class="pillar">
+        <span class="tag">CCAAS</span>
+        <h4>CCaaS Readiness</h4>
+        <p>Routing clarity, metadata completeness, and IVR integrity across contact-center surfaces.</p>
+      </div>
+      <div class="pillar">
+        <span class="tag">UCAAS</span>
+        <h4>UCaaS Readiness</h4>
+        <p>Sender posture, inbox reachability, and comms-surface stability for unified communications.</p>
+      </div>
+      <div class="pillar">
+        <span class="tag">AI</span>
+        <h4>AI-Interaction Readiness</h4>
+        <p>Machine-readable metadata, structured signals, and continuous drift detection.</p>
+      </div>
+      <div class="pillar">
+        <span class="tag">COMPLIANCE</span>
+        <h4>Compliance Alignment</h4>
+        <p>GDPR, recording disclosures, TLS posture, and policy-file correctness.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="block" id="how">
+  <div class="wrap reveal">
+    <span class="eyebrow">05 — How CIP Works</span>
+    <h2>A deterministic, repeatable <span class="accent">five-stage</span> pipeline.</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="sn">01</span>
+        <h4>Surface Enumeration</h4>
+        <p>Identifies all reachable comms surfaces — web, email, IVR, metadata, and API endpoints.</p>
+      </div>
+      <div class="step">
+        <span class="sn">02</span>
+        <h4>Channel Diagnostics</h4>
+        <p>Runs deterministic checks across 9 channels with no heuristic or marketing-based scoring.</p>
+      </div>
+      <div class="step">
+        <span class="sn">03</span>
+        <h4>Risk Classification</h4>
+        <p>Assigns CX Impact and Fix Priority (P1 / P2 / P3) to every finding.</p>
+      </div>
+      <div class="step">
+        <span class="sn">04</span>
+        <h4>Procurement Readiness Score</h4>
+        <p>Aggregates the CCaaS, UCaaS, AI, and Compliance pillars into a single readiness score.</p>
+      </div>
+      <div class="step">
+        <span class="sn">05</span>
+        <h4>Drift Detection</h4>
+        <p>Weekly re-scans detect metadata drift, DNS changes, CTA changes, and IVR modifications.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAMPLE REPORT -->
+<section class="block alt" id="report">
+  <div class="wrap reveal">
+    <span class="eyebrow">06 — Sample Report</span>
+    <h2>Vendor-security-ready output, <span class="accent">procurement-aligned</span> scoring.</h2>
+    <p class="sub">Every scan produces a structured report graded across readiness dimensions, with a prioritized P1/P2/P3 remediation plan.</p>
+
+    <div class="report-card">
+      <div class="report-head">
+        <span class="t">REPORT — <b>acme-comms.example</b> · scan #4471</span>
+        <div class="score">
+          <span class="t" style="text-align:right">PROCUREMENT<br>READINESS</span>
+          <span class="ring"><i>72</i></span>
+        </div>
+      </div>
+
+      <div class="report-rows">
+        <div class="rrow"><span class="name">Comms Clarity</span><span class="bar"><i style="width:84%;background:var(--p3)"></i></span><span class="pct">84</span></div>
+        <div class="rrow"><span class="name">Buyer Discoverability</span><span class="bar"><i style="width:67%;background:var(--p2)"></i></span><span class="pct">67</span></div>
+        <div class="rrow"><span class="name">Comms Surface Security</span><span class="bar"><i style="width:58%;background:var(--p2)"></i></span><span class="pct">58</span></div>
+        <div class="rrow"><span class="name">AI-Interaction Readiness</span><span class="bar"><i style="width:71%;background:var(--p2)"></i></span><span class="pct">71</span></div>
+        <div class="rrow"><span class="name">IVR Audit</span><span class="bar"><i style="width:90%;background:var(--p3)"></i></span><span class="pct">90</span></div>
+        <div class="rrow"><span class="name">Drift Detection</span><span class="bar"><i style="width:45%;background:var(--p1)"></i></span><span class="pct">45</span></div>
+      </div>
+
+      <div class="findings">
+        <div class="fh">Procurement-Blocking Findings · Remediation Plan</div>
+        <div class="finding">
+          <span class="pbadge p1">P1</span>
+          <span class="fdesc">MTA-STS policy missing — transport security cannot be enforced</span>
+          <span class="fchan">EMAIL</span>
+        </div>
+        <div class="finding">
+          <span class="pbadge p2">P2</span>
+          <span class="fdesc">DMARC set to <span class="mono">p=none</span> — no enforcement against spoofing</span>
+          <span class="fchan">SENDER-AUTH</span>
+        </div>
+        <div class="finding">
+          <span class="pbadge p2">P2</span>
+          <span class="fdesc">JSON-LD incomplete — 3 of 7 expected schema types present</span>
+          <span class="fchan">AI-READINESS</span>
+        </div>
+        <div class="finding">
+          <span class="pbadge p3">P3</span>
+          <span class="fdesc">Open Graph image dimensions below recommended spec</span>
+          <span class="fchan">METADATA</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px"><a href="./public/reports/sample-comms-report.pdf" target="_blank" rel="noopener" class="btn btn-ghost">View Full Sample Report →</a></div>
+  </div>
+</section>
+
+<!-- OUTPUTS -->
+<section class="block">
+  <div class="wrap reveal">
+    <span class="eyebrow">07 — Enterprise Outputs</span>
+    <h2>Structured deliverables for <span class="accent">vendor-security</span> and procurement.</h2>
+    <div class="outputs">
+      <div class="output">Vendor-security-ready reports</div>
+      <div class="output">Procurement-aligned scoring</div>
+      <div class="output">AI-agent readiness summary</div>
+      <div class="output">Sender-auth posture map</div>
+      <div class="output">Metadata integrity map</div>
+      <div class="output">IVR compliance snapshot</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="cta">
+  <div class="wrap reveal">
+    <span class="eyebrow">Get Started</span>
+    <h2>Run a procurement-grade scan across <span class="accent">every</span> comms surface.</h2>
+    <p>Structured, repeatable diagnostics for web, email, IVR, metadata, AI-readiness, and compliance posture.</p>
+    <div class="cta-actions">
+      <a href="#" class="btn btn-sage">Run Enterprise Scan <span class="arr">→</span></a>
+      <a href="#" class="btn btn-ghost">Request Integration Overview</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="fbrand">
+      <a class="brand" href="#top">
+        <svg class="logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20 2 L22.5 17.5 L38 20 L22.5 22.5 L20 38 L17.5 22.5 L2 20 L17.5 17.5 Z" fill="#0B0E14"/>
+          <path d="M20 9 L21.3 18.7 L31 20 L21.3 21.3 L20 31 L18.7 21.3 L9 20 L18.7 18.7 Z" fill="#7DAE9F"/>
+          <circle cx="20" cy="20" r="1.6" fill="#0B0E14"/>
+        </svg>
+        <span class="name"><b>Northern&nbsp;Star</b> <i>Systems</i></span>
+      </a>
+      <p>Communications Intelligence Platform. Structured, repeatable comms-surface diagnostics for the enterprise.</p>
+    </div>
+    <div>
+      <h5>Platform</h5>
+      <ul>
+        <li><a href="#what">Comms Surface Security</a></li>
+        <li><a href="#what">AI-Interaction Readiness</a></li>
+        <li><a href="#report">IVR Audit</a></li>
+        <li><a href="#how">Drift Detection</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Pillars</h5>
+      <ul>
+        <li><a href="#pillars">CCaaS Readiness</a></li>
+        <li><a href="#pillars">UCaaS Readiness</a></li>
+        <li><a href="#pillars">AI-Interaction</a></li>
+        <li><a href="#pillars">Compliance</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Company</h5>
+      <ul>
+        <li><a href="#who">Who Uses CIP</a></li>
+        <li><a href="#cta">Run Enterprise Scan</a></li>
+        <li><a href="#report">Sample Report</a></li>
+        <li><a href="#cta">Request Overview</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="fbottom">
+    <span>© 2026 Northern Star Systems — Communications Intelligence Platform</span>
+    <span>DETERMINISTIC · REPEATABLE · PROCUREMENT-GRADE</span>
+  </div>
+</footer>
+
+<script>
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
