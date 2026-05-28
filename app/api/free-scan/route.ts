@@ -19,11 +19,16 @@ function daysUntilNextScan(submittedAt: string): number {
   return Math.ceil((RATE_LIMIT_MS - ageMs) / (24 * 60 * 60 * 1000));
 }
 
-async function buildScanUrl(runId: string): Promise<string | null> {
+async function buildScanUrl(
+  runId: string,
+  admin: boolean
+): Promise<string | null> {
   const secret = process.env.OPS_AUTH_SECRET;
   if (!secret) return null;
   const { path } = await makeShareUrl(runId, secret);
-  // /r/... is the full operator-style report; the teaser page lives at /scan/...
+  // Admins go straight to /r/... (full report). Public free scans get the
+  // /scan/... teaser with only 2 critical + 1 watch finding unlocked.
+  if (admin) return path;
   return path.replace(/^\/r\//, "/scan/");
 }
 
@@ -63,7 +68,7 @@ export async function POST(req: NextRequest) {
   if (!admin) {
     const existing = getRecentScanForEmail(email);
     if (existing) {
-      const scanUrl = await buildScanUrl(existing.runId);
+      const scanUrl = await buildScanUrl(existing.runId, false);
       return NextResponse.json(
         {
           error: "rate_limited",
@@ -97,7 +102,7 @@ export async function POST(req: NextRequest) {
     url: run.url,
   });
 
-  const scanUrl = await buildScanUrl(id);
+  const scanUrl = await buildScanUrl(id, admin);
   if (!scanUrl) {
     // Share links require OPS_AUTH_SECRET. Without it, return the run id
     // so the page can still be reached via the operator route if needed.

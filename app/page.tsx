@@ -61,7 +61,9 @@ export default function HomePage() {
         <div className="relative z-10 mx-auto w-full max-w-[1240px] px-6">
           <div className="grid gap-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
             <div>
-              <span className="eyebrow">Communications Intelligence Platform</span>
+              <span className="inline-block rounded-full border border-ink bg-bg px-5 py-2 font-mono text-[15px] sm:text-[16px] font-semibold uppercase tracking-[0.16em] text-ink">
+                Communications Intelligence Platform
+              </span>
               <h1 className="mt-7 text-[42px] sm:text-[56px] lg:text-[68px] leading-[1.04] font-extrabold tracking-[-0.03em] text-ink">
                 Your Comms Surface Has{" "}
                 <span className="text-sage">Hidden Risk</span> — We&apos;ll
