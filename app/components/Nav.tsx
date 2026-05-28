@@ -4,14 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { Container } from "./Container";
-import { useLocale, useT } from "../i18n/LocaleProvider";
+import { useLocale } from "../i18n/LocaleProvider";
 
-const linkDefs = [
-  { href: "/services", key: "nav.services" },
-  { href: "/how-it-works", key: "nav.howItWorks" },
-  { href: "/pricing", key: "nav.pricing" },
-  { href: "/portal", key: "nav.dashboard" },
-  { href: "/reports", key: "nav.weeklyReport" },
+const navLinks = [
+  { href: "/#what", label: "What CIP Does" },
+  { href: "/#pillars", label: "Pillars" },
+  { href: "/#report", label: "Sample Report" },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 const subscribeScroll = (cb: () => void) => {
@@ -21,11 +20,41 @@ const subscribeScroll = (cb: () => void) => {
 const getScrollSnapshot = () => window.scrollY > 4;
 const getScrollServerSnapshot = () => false;
 
+function Logo() {
+  return (
+    <Link href="/" className="flex items-center gap-3 text-ink">
+      <svg
+        viewBox="0 0 40 40"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+        className="h-7 w-7 shrink-0"
+      >
+        <path
+          d="M20 2 L22.5 17.5 L38 20 L22.5 22.5 L20 38 L17.5 22.5 L2 20 L17.5 17.5 Z"
+          fill="#0B0E14"
+        />
+        <path
+          d="M20 9 L21.3 18.7 L31 20 L21.3 21.3 L20 31 L18.7 21.3 L9 20 L18.7 18.7 Z"
+          fill="#7DAE9F"
+        />
+        <circle cx="20" cy="20" r="1.6" fill="#0B0E14" />
+      </svg>
+      <span className="flex items-baseline gap-1.5 text-base font-bold tracking-tight">
+        <span className="font-extrabold">Northern&nbsp;Star</span>
+        <span className="text-sage font-semibold">Systems</span>
+      </span>
+      <span aria-hidden className="hidden sm:block h-5 w-px bg-border-2 mx-1" />
+      <span className="hidden sm:inline font-mono text-[11.5px] font-semibold uppercase tracking-[0.22em] text-muted">
+        CIP
+      </span>
+    </Link>
+  );
+}
+
 export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { locale, setLocale } = useLocale();
-  const t = useT();
 
   const scrolled = useSyncExternalStore(
     subscribeScroll,
@@ -41,50 +70,46 @@ export function Nav() {
   )
     return null;
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== "/" && pathname.startsWith(href));
-
   const closeMenu = () => setOpen(false);
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-surface/85 backdrop-blur transition-shadow ${
-        scrolled
-          ? "shadow-sm border-b border-border"
-          : "border-b border-transparent"
+      className={`sticky top-0 z-50 bg-bg/90 backdrop-blur transition-shadow ${
+        scrolled ? "shadow-sm border-b border-border" : "border-b border-transparent"
       }`}
     >
-      <Container className="flex items-center justify-between py-4">
-        <Link
-          href="/"
-          className="text-base font-semibold tracking-tight text-text"
-          onClick={closeMenu}
-        >
-          Web Assessment Agency
-        </Link>
+      <Container className="flex items-center justify-between h-[72px]">
+        <Logo />
 
-        <nav className="hidden md:flex items-center gap-6">
-          {linkDefs.map((l) => (
+        <nav className="hidden lg:flex items-center gap-8">
+          {navLinks.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`text-sm transition-colors ${
-                isActive(l.href)
-                  ? "text-wa-primary"
-                  : "text-text-muted hover:text-text"
-              }`}
+              className="text-sm text-body hover:text-sage-deep transition-colors"
             >
-              {t(l.key)}
+              {l.label}
             </Link>
           ))}
+        </nav>
+
+        <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/login"
-            className="rounded-md border border-wa-primary px-3 py-1.5 text-xs font-medium text-wa-primary hover:bg-wa-primary-soft"
+            href="/reports/sample-comms-report.pdf"
+            target="_blank"
+            rel="noopener"
+            className="text-sm font-medium px-5 py-2.5 rounded-full border border-border-2 text-ink hover:border-ink transition-colors"
           >
-            {t("nav.signIn")}
+            View Sample Report
+          </Link>
+          <Link
+            href="/#scan"
+            className="text-sm font-medium px-5 py-2.5 rounded-full bg-sage text-white border border-sage hover:bg-sage-dark hover:border-sage-dark transition-colors"
+          >
+            Run Enterprise Scan
           </Link>
           <span
-            className="inline-flex overflow-hidden rounded-md border border-border text-[11px] font-semibold"
+            className="ml-2 inline-flex overflow-hidden rounded-full border border-border text-[10px] font-semibold"
             role="group"
             aria-label="Language"
           >
@@ -93,8 +118,8 @@ export function Nav() {
               onClick={() => setLocale("sv")}
               className={`px-2 py-1 transition-colors ${
                 locale === "sv"
-                  ? "bg-wa-primary text-white"
-                  : "text-text-muted hover:text-text"
+                  ? "bg-ink text-white"
+                  : "text-muted hover:text-ink"
               }`}
             >
               SV
@@ -104,21 +129,21 @@ export function Nav() {
               onClick={() => setLocale("en")}
               className={`px-2 py-1 transition-colors ${
                 locale === "en"
-                  ? "bg-wa-primary text-white"
-                  : "text-text-muted hover:text-text"
+                  ? "bg-ink text-white"
+                  : "text-muted hover:text-ink"
               }`}
             >
               EN
             </button>
           </span>
-        </nav>
+        </div>
 
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-label="Toggle menu"
           aria-expanded={open}
-          className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-text"
+          className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-ink"
         >
           <span
             aria-hidden
@@ -128,34 +153,39 @@ export function Nav() {
       </Container>
 
       <div
-        className={`md:hidden overflow-hidden border-t border-border bg-surface transition-[max-height] duration-200 ease-out ${
-          open ? "max-h-96" : "max-h-0"
+        className={`md:hidden overflow-hidden border-t border-border bg-bg transition-[max-height] duration-200 ease-out ${
+          open ? "max-h-[600px]" : "max-h-0"
         }`}
       >
         <Container className="flex flex-col gap-1 py-3">
-          {linkDefs.map((l) => (
+          {navLinks.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               onClick={closeMenu}
-              className={`rounded-md px-2 py-2 text-sm ${
-                isActive(l.href)
-                  ? "text-wa-primary bg-wa-primary-soft"
-                  : "text-text-muted hover:text-text hover:bg-bg"
-              }`}
+              className="rounded-md px-2 py-2 text-sm text-body hover:bg-bg-soft hover:text-sage-deep"
             >
-              {t(l.key)}
+              {l.label}
             </Link>
           ))}
           <Link
-            href="/login"
+            href="/reports/sample-comms-report.pdf"
+            target="_blank"
+            rel="noopener"
             onClick={closeMenu}
-            className="mt-2 rounded-md border border-wa-primary px-2 py-2 text-sm font-medium text-wa-primary hover:bg-wa-primary-soft"
+            className="mt-2 text-center rounded-full border border-border-2 px-4 py-2 text-sm font-medium text-ink"
           >
-            {t("nav.signIn")}
+            View Sample Report
+          </Link>
+          <Link
+            href="/#scan"
+            onClick={closeMenu}
+            className="text-center rounded-full bg-sage px-4 py-2 text-sm font-medium text-white"
+          >
+            Run Enterprise Scan
           </Link>
           <span
-            className="mt-3 inline-flex overflow-hidden rounded-md border border-border text-xs font-semibold self-start"
+            className="mt-3 inline-flex overflow-hidden rounded-full border border-border text-xs font-semibold self-start"
             role="group"
             aria-label="Language"
           >
@@ -167,8 +197,8 @@ export function Nav() {
               }}
               className={`px-3 py-1.5 transition-colors ${
                 locale === "sv"
-                  ? "bg-wa-primary text-white"
-                  : "text-text-muted hover:text-text"
+                  ? "bg-ink text-white"
+                  : "text-muted hover:text-ink"
               }`}
             >
               SV
@@ -181,8 +211,8 @@ export function Nav() {
               }}
               className={`px-3 py-1.5 transition-colors ${
                 locale === "en"
-                  ? "bg-wa-primary text-white"
-                  : "text-text-muted hover:text-text"
+                  ? "bg-ink text-white"
+                  : "text-muted hover:text-ink"
               }`}
             >
               EN

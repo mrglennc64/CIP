@@ -1,12 +1,20 @@
 import Link from "next/link";
 
-type Variant = "primary" | "outline";
+type Variant = "primary" | "outline" | "ghost" | "sage";
 
 const styles: Record<Variant, string> = {
+  // Pill, ink background — the mockup's primary CTA.
   primary:
-    "bg-wa-primary text-white hover:bg-wa-primary-dark border border-transparent",
+    "bg-ink text-white border border-ink hover:bg-black",
+  // Pill, sage filled — the mockup's accent CTA.
+  sage:
+    "bg-sage text-white border border-sage hover:bg-sage-dark hover:border-sage-dark",
+  // Pill, outlined — mockup's "ghost" / secondary button.
+  ghost:
+    "bg-bg text-ink border border-border-2 hover:border-ink",
+  // Legacy alias kept so existing pages keep working until repainted.
   outline:
-    "bg-transparent text-wa-primary hover:bg-wa-primary-soft border border-wa-primary",
+    "bg-transparent text-sage-deep border border-sage hover:bg-sage-soft",
 };
 
 export function Button({
@@ -21,7 +29,7 @@ export function Button({
   className?: string;
 }) {
   const base =
-    "inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wa-primary";
+    "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage";
 
   return (
     <Link href={href} className={`${base} ${styles[variant]} ${className}`}>

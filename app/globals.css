@@ -1,45 +1,108 @@
 @import "tailwindcss";
 
-/* Web Assessment Agency design tokens.
-   Scandinavian minimal: cool blue primary, neutral surface,
-   structured spacing, soft borders. Mirrors war/webflow-template.txt. */
+/* CIP / Northern Star Systems design tokens.
+   Sage-green accent on near-black ink, with P1/P2/P3 risk colors.
+   Mirrors the CIP marketing mockup palette. */
 :root {
-  --wa-bg: #f7f9fb;
-  --wa-surface: #ffffff;
-  --wa-border: #e5e7eb;
+  /* Neutrals */
+  --bg: #ffffff;
+  --bg-soft: #f7faf9;
+  --bg-tint: #eff6f3;
+  --ink: #0b0e14;
+  --body: #1a1f2a;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --line: #e5e9ee;
+  --line-2: #d6dee4;
 
-  --wa-primary: #1f6feb;
-  --wa-primary-dark: #1a5fcc;
-  --wa-primary-soft: #e3edff;
+  /* Sage accent */
+  --sage: #7dae9f;
+  --sage-dark: #5f9486;
+  --sage-deep: #3f7468;
+  --sage-soft: #e6f0ec;
 
-  --wa-text: #111827;
-  --wa-text-muted: #6b7280;
+  /* Risk colors */
+  --p1: #b84c45;
+  --p1-bg: #faedeb;
+  --p2: #b58435;
+  --p2-bg: #faf1df;
+  --p3: #3f7468;
+  --p3-bg: #e6f0ec;
 
-  --wa-accent: #10b981;
-  --wa-danger: #ef4444;
+  /* Legacy aliases — keep existing pages working while they get repainted.
+     Maps the old wa-* names to the new palette. */
+  --wa-bg: var(--bg-soft);
+  --wa-surface: var(--bg);
+  --wa-border: var(--line);
+  --wa-primary: var(--sage);
+  --wa-primary-dark: var(--sage-dark);
+  --wa-primary-soft: var(--sage-soft);
+  --wa-text: var(--ink);
+  --wa-text-muted: var(--muted);
+  --wa-accent: var(--sage-deep);
+  --wa-danger: var(--p1);
 }
 
 @theme inline {
-  --color-bg: var(--wa-bg);
-  --color-surface: var(--wa-surface);
-  --color-border: var(--wa-border);
-  --color-text: var(--wa-text);
-  --color-text-muted: var(--wa-text-muted);
+  /* Semantic */
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-bg-tint: var(--bg-tint);
+  --color-surface: var(--bg);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-border: var(--line);
+  --color-border-2: var(--line-2);
+  --color-text: var(--ink);
+  --color-text-muted: var(--muted);
+  --color-text-faint: var(--muted-2);
 
-  --color-wa-primary: var(--wa-primary);
-  --color-wa-primary-dark: var(--wa-primary-dark);
-  --color-wa-primary-soft: var(--wa-primary-soft);
-  --color-wa-accent: var(--wa-accent);
-  --color-wa-danger: var(--wa-danger);
+  /* Sage */
+  --color-sage: var(--sage);
+  --color-sage-dark: var(--sage-dark);
+  --color-sage-deep: var(--sage-deep);
+  --color-sage-soft: var(--sage-soft);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Risk */
+  --color-p1: var(--p1);
+  --color-p1-bg: var(--p1-bg);
+  --color-p2: var(--p2);
+  --color-p2-bg: var(--p2-bg);
+  --color-p3: var(--p3);
+  --color-p3-bg: var(--p3-bg);
+
+  /* Legacy wa-* tokens still in use across pages */
+  --color-wa-primary: var(--sage);
+  --color-wa-primary-dark: var(--sage-dark);
+  --color-wa-primary-soft: var(--sage-soft);
+  --color-wa-accent: var(--sage-deep);
+  --color-wa-danger: var(--p1);
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, Menlo, monospace;
 }
 
 html,
 body {
-  background: var(--wa-bg);
-  color: var(--wa-text);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--body);
+  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* CIP marketing surface utilities — used by the home page and shared chrome. */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sage-deep);
+  padding: 7px 14px;
+  border: 1px solid var(--sage);
+  border-radius: 999px;
+  background: var(--bg);
+}
+.mono {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
